@@ -9,7 +9,8 @@ INSERT INTO public.categories (name, slug, description) VALUES
   ('Reviews',        'reviews',        'Editorial game and hardware reviews.')
 ON CONFLICT (slug) DO NOTHING;
 
--- Seed one minimal author for the admin user
-INSERT INTO public.authors (name, slug, bio)
-VALUES ('Soft Gamer Editor', 'soft-gamer-editor', 'Editorial Staff')
+-- Seed author profiles for the authenticated user and fallback
+INSERT INTO public.authors (name, slug, bio) VALUES
+  ('umerch5491', 'umerch5491', 'Admin & Lead Editor'),
+  ('Soft Gamer Editor', 'soft-gamer-editor', 'Editorial Staff')
 ON CONFLICT (slug) DO NOTHING;

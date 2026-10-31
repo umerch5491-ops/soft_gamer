@@ -149,9 +149,11 @@ export async function saveArticle(
   if (supabase && isSupabaseConfigured()) {
     try {
       // In production Supabase flow: resolve foreign key UUIDs
-      let resolvedCategoryId: string = formData.category;
+      let resolvedCategoryId: string | null = null;
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (!uuidRegex.test(resolvedCategoryId)) {
+      if (uuidRegex.test(formData.category)) {
+        resolvedCategoryId = formData.category;
+      } else {
         const { data: catRow } = await supabase
           .from('categories')
           .select('id')
@@ -162,25 +164,58 @@ export async function saveArticle(
         }
       }
 
-      let resolvedAuthorId: string = formData.authorName;
-      if (!uuidRegex.test(resolvedAuthorId)) {
+      if (!resolvedCategoryId) {
+        return {
+          success: false,
+          error: `Category "${formData.category}" not found in database. Please ensure categories are seeded.`,
+        };
+      }
+
+      // Resolve author profile from public.authors table
+      let resolvedAuthorId: string | null = null;
+      if (uuidRegex.test(formData.authorName)) {
+        resolvedAuthorId = formData.authorName;
+      } else {
+        // Try matching by exact or case-insensitive name
         const { data: authRow } = await supabase
           .from('authors')
           .select('id')
           .ilike('name', formData.authorName.trim())
           .maybeSingle();
+
         if (authRow && 'id' in authRow) {
           resolvedAuthorId = (authRow as { id: string }).id;
         } else {
-          const { data: fallbackAuth } = await supabase
+          // Check if an author matches the slugified username
+          const authorSlug = generateSlug(formData.authorName);
+          const { data: authBySlug } = await supabase
             .from('authors')
             .select('id')
-            .limit(1)
+            .eq('slug', authorSlug)
             .maybeSingle();
-          if (fallbackAuth && 'id' in fallbackAuth) {
-            resolvedAuthorId = (fallbackAuth as { id: string }).id;
+
+          if (authBySlug && 'id' in authBySlug) {
+            resolvedAuthorId = (authBySlug as { id: string }).id;
+          } else {
+            // Check if there is any author in the database
+            const { data: anyAuthor } = await supabase
+              .from('authors')
+              .select('id')
+              .limit(1)
+              .maybeSingle();
+
+            if (anyAuthor && 'id' in anyAuthor) {
+              resolvedAuthorId = (anyAuthor as { id: string }).id;
+            }
           }
         }
+      }
+
+      if (!resolvedAuthorId) {
+        return {
+          success: false,
+          error: `No author profile found in the database for "${formData.authorName}". An author record in public.authors is required before publishing articles.`,
+        };
       }
 
       const articlePayload: Database['public']['Tables']['articles']['Insert'] = {
