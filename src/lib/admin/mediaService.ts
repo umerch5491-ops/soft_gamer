@@ -1,6 +1,8 @@
 import { MediaItem } from '@/types/admin';
+import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
 
 const LOCAL_STORAGE_MEDIA_KEY = 'softgamer_admin_demo_media';
+const STORAGE_BUCKET = 'article-images';
 
 const INITIAL_MEDIA_ITEMS: MediaItem[] = [
   {
@@ -69,6 +71,38 @@ const INITIAL_MEDIA_ITEMS: MediaItem[] = [
 ];
 
 export async function getMediaItems(): Promise<MediaItem[]> {
+  // When Supabase is configured, list files from the storage bucket
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      const { data, error } = await supabase.storage.from(STORAGE_BUCKET).list('', {
+        limit: 100,
+        offset: 0,
+        sortBy: { column: 'created_at', order: 'desc' },
+      });
+      if (!error && data) {
+        const items: MediaItem[] = data
+          .filter(f => f.name !== '.emptyFolderPlaceholder')
+          .map(f => {
+            const { data: urlData } = supabase.storage
+              .from(STORAGE_BUCKET)
+              .getPublicUrl(f.name);
+            return {
+              id: f.id ?? f.name,
+              name: f.name,
+              url: urlData.publicUrl,
+              altText: f.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '),
+              sizeBytes: f.metadata?.size ?? 0,
+              mimeType: f.metadata?.mimetype ?? 'image/jpeg',
+              uploadedAt: f.created_at ?? new Date().toISOString(),
+            };
+          });
+        return items;
+      }
+    }
+  }
+
+  // Fallback: demo mode using localStorage
   if (typeof window !== 'undefined') {
     const saved = localStorage.getItem(LOCAL_STORAGE_MEDIA_KEY);
     if (saved) {
@@ -114,7 +148,52 @@ export async function uploadMediaItem(
     return { success: false, error: validation.error };
   }
 
-  // Simulate progress
+  // Use real Supabase Storage when configured
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      if (onProgress) onProgress(20);
+
+      // Unique file path to avoid collisions
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const filePath = `${Date.now()}-${safeName}`;
+
+      if (onProgress) onProgress(50);
+
+      const { data, error } = await supabase.storage
+        .from(STORAGE_BUCKET)
+        .upload(filePath, file, {
+          contentType: file.type,
+          upsert: false,
+        });
+
+      if (error) {
+        return { success: false, error: `Storage upload failed: ${error.message}` };
+      }
+
+      if (onProgress) onProgress(90);
+
+      const { data: urlData } = supabase.storage
+        .from(STORAGE_BUCKET)
+        .getPublicUrl(data.path);
+
+      if (onProgress) onProgress(100);
+
+      const newItem: MediaItem = {
+        id: data.path,
+        name: file.name,
+        url: urlData.publicUrl,
+        altText: altText || file.name.replace(/\.[^/.]+$/, ''),
+        sizeBytes: file.size,
+        mimeType: file.type,
+        uploadedAt: new Date().toISOString(),
+      };
+
+      return { success: true, item: newItem };
+    }
+  }
+
+  // Demo mode fallback: create an object URL preview
   if (onProgress) {
     onProgress(30);
     await new Promise(r => setTimeout(r, 200));
@@ -123,7 +202,6 @@ export async function uploadMediaItem(
     onProgress(100);
   }
 
-  // In demo mode without live Supabase storage bucket, create an object URL or base64 preview
   const previewUrl = URL.createObjectURL(file);
   const newItem: MediaItem = {
     id: 'med-' + Date.now(),
@@ -145,6 +223,19 @@ export async function uploadMediaItem(
 }
 
 export async function deleteMediaItem(id: string): Promise<{ success: boolean; error?: string }> {
+  // Use real Supabase Storage when configured
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      const { error } = await supabase.storage.from(STORAGE_BUCKET).remove([id]);
+      if (error) {
+        return { success: false, error: `Storage delete failed: ${error.message}` };
+      }
+      return { success: true };
+    }
+  }
+
+  // Demo mode fallback
   const current = await getMediaItems();
   const filtered = current.filter(m => m.id !== id);
   if (typeof window !== 'undefined') {
@@ -152,4 +243,3 @@ export async function deleteMediaItem(id: string): Promise<{ success: boolean; e
   }
   return { success: true };
 }
-

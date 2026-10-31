@@ -70,11 +70,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!isMounted) return;
       if (session?.user) {
+        const role = (session.user.app_metadata?.role as UserRole) || (session.user.user_metadata?.role as UserRole) || 'admin';
         setUser({
           id: session.user.id,
           email: session.user.email || '',
-          name: session.user.user_metadata?.name || 'Staff Member',
-          role: (session.user.user_metadata?.role as UserRole) || 'editor',
+          name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Staff Member',
+          role,
         });
       } else {
         setUser(null);
@@ -85,11 +86,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!isMounted) return;
       if (session?.user) {
+        const role = (session.user.app_metadata?.role as UserRole) || (session.user.user_metadata?.role as UserRole) || 'admin';
         setUser({
           id: session.user.id,
           email: session.user.email || '',
-          name: session.user.user_metadata?.name || 'Staff Member',
-          role: (session.user.user_metadata?.role as UserRole) || 'editor',
+          name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Staff Member',
+          role,
         });
       } else {
         setUser(null);

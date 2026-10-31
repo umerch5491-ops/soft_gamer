@@ -1,18 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
   Save,
   Send,
-  Clock,
   ArrowLeft,
   Sparkles,
-  Tag as TagIcon,
+  ChevronDown,
+  ChevronUp,
+  Upload,
   X,
   AlertCircle,
   CheckCircle,
+  Tag as TagIcon,
+  Clock,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Article, CategorySlug } from '@/types/article';
@@ -25,6 +28,7 @@ import { SeoAnalysisPanel } from '@/components/admin/SeoAnalysisPanel';
 import { EditorialChecklist } from '@/components/admin/EditorialChecklist';
 import { InternalLinkSuggester } from '@/components/admin/InternalLinkSuggester';
 import { generateSlug, saveArticle } from '@/lib/admin/articleService';
+import { uploadMediaItem, validateImageFile } from '@/lib/admin/mediaService';
 import { useAuth } from '@/lib/auth/authContext';
 
 interface ArticleFormProps {
@@ -32,58 +36,121 @@ interface ArticleFormProps {
   isEditMode?: boolean;
 }
 
+/** Strip HTML tags to plain text for excerpt auto-generation */
+function htmlToPlainText(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** Auto-generate a short excerpt (≤ 200 chars) from content */
+function autoExcerpt(content: string): string {
+  const plain = htmlToPlainText(content);
+  if (plain.length <= 200) return plain;
+  const cut = plain.slice(0, 200);
+  const lastSpace = cut.lastIndexOf(' ');
+  return (lastSpace > 120 ? cut.slice(0, lastSpace) : cut) + '…';
+}
+
 export function ArticleForm({ initialArticle, isEditMode = false }: ArticleFormProps) {
   const router = useRouter();
-  const { isDemoMode } = useAuth();
+  const { user, isDemoMode } = useAuth();
 
-  // Form State
-  const [title, setTitle] = useState(initialArticle?.title || '');
-  const [slug, setSlug] = useState(initialArticle?.slug || '');
+  // ── Core form state ──────────────────────────────────────────────────────────
+  const [title, setTitle] = useState(initialArticle?.title ?? '');
+  const [slug, setSlug] = useState(initialArticle?.slug ?? '');
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(Boolean(initialArticle?.slug));
-  const [excerpt, setExcerpt] = useState(initialArticle?.excerpt || '');
-  const [content, setContent] = useState(initialArticle?.content || '');
+  const [excerpt, setExcerpt] = useState(initialArticle?.excerpt ?? '');
+  const [excerptManuallyEdited, setExcerptManuallyEdited] = useState(Boolean(initialArticle?.excerpt));
+  const [content, setContent] = useState(initialArticle?.content ?? '');
   const [featuredImage, setFeaturedImage] = useState(
-    initialArticle?.featuredImage || '/images/articles/placeholder-tech.svg'
+    initialArticle?.featuredImage ?? '/images/articles/placeholder-tech.svg'
   );
-  const [imageAlt, setImageAlt] = useState(initialArticle?.imageAlt || '');
+  const [imageAlt, setImageAlt] = useState(initialArticle?.imageAlt ?? '');
   const [category, setCategory] = useState<CategorySlug>(
-    initialArticle?.category || 'gaming-news'
+    initialArticle?.category ?? 'gaming-news'
   );
-  const [authorName, setAuthorName] = useState(initialArticle?.author.name || 'Elena Rostova');
+
+  // Author: use authenticated user name; allow override in Advanced Settings
+  const defaultAuthorName = user?.name ?? initialArticle?.author.name ?? 'Soft Gamer Editor';
+  const [authorName, setAuthorName] = useState(initialArticle?.author.name ?? defaultAuthorName);
   const [authorRole, setAuthorRole] = useState(
-    initialArticle?.author.role || 'Senior Tech & Hardware Editor'
+    initialArticle?.author.role ?? 'Staff Writer'
   );
-  const [tags, setTags] = useState<string[]>(initialArticle?.tags || ['PC Gaming', 'Hardware']);
+
+  // Advanced fields
+  const [tags, setTags] = useState<string[]>(initialArticle?.tags ?? []);
   const [tagInput, setTagInput] = useState('');
   const [status, setStatus] = useState<'draft' | 'published' | 'scheduled'>(
-    initialArticle?.status || 'draft'
+    initialArticle?.status ?? 'draft'
   );
-  const [featured, setFeatured] = useState<boolean>(initialArticle?.featured || false);
+  const [featured, setFeatured] = useState<boolean>(initialArticle?.featured ?? false);
   const [scheduledAt, setScheduledAt] = useState<string>(
     initialArticle?.publishedAt ? new Date(initialArticle.publishedAt).toISOString().slice(0, 16) : ''
   );
-  const [seoTitle, setSeoTitle] = useState(initialArticle?.seoTitle || '');
-  const [metaDescription, setMetaDescription] = useState(initialArticle?.metaDescription || '');
+  const [seoTitle, setSeoTitle] = useState(initialArticle?.seoTitle ?? '');
+  const [metaDescription, setMetaDescription] = useState(initialArticle?.metaDescription ?? '');
   const [editorialChecklist, setEditorialChecklist] = useState<Record<string, boolean>>(
-    initialArticle?.editorialChecklist || {}
+    initialArticle?.editorialChecklist ?? {}
   );
 
-  // UI state — article editor tab
-  const [activeTab, setActiveTab] = useState<'content' | 'seo' | 'links' | 'checklist'>('content');
+  // ── UI state ─────────────────────────────────────────────────────────────────
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [advancedTab, setAdvancedTab] = useState<'seo' | 'links' | 'checklist'>('seo');
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isImageUploading, setIsImageUploading] = useState(false);
+  const [imageUploadProgress, setImageUploadProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-slug generation from title
+  // ── Handlers ─────────────────────────────────────────────────────────────────
+
   const handleTitleChange = (val: string) => {
     setTitle(val);
-    if (!slugManuallyEdited) {
-      setSlug(generateSlug(val));
-    }
+    if (!slugManuallyEdited) setSlug(generateSlug(val));
   };
 
-  // Add Tag
+  const handleContentChange = useCallback((newHtml: string) => {
+    setContent(newHtml);
+    if (!excerptManuallyEdited && newHtml.trim()) {
+      setExcerpt(autoExcerpt(newHtml));
+    }
+  }, [excerptManuallyEdited]);
+
+  const handleMediaSelected = (url: string, alt?: string) => {
+    setFeaturedImage(url);
+    if (alt && !imageAlt) setImageAlt(alt);
+    setMediaPickerOpen(false);
+  };
+
+  const handleDirectUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      setErrorMessage(validation.error ?? 'Invalid file.');
+      return;
+    }
+    setIsImageUploading(true);
+    setImageUploadProgress(0);
+    setErrorMessage(null);
+    const result = await uploadMediaItem(file, imageAlt || file.name, (p) =>
+      setImageUploadProgress(p)
+    );
+    setIsImageUploading(false);
+    if (result.success && result.item) {
+      setFeaturedImage(result.item.url);
+      if (!imageAlt) setImageAlt(result.item.altText);
+    } else {
+      setErrorMessage(result.error ?? 'Image upload failed.');
+    }
+    // Reset input so the same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleAddTag = () => {
     const clean = tagInput.trim();
     if (clean && !tags.includes(clean)) {
@@ -93,63 +160,41 @@ export function ArticleForm({ initialArticle, isEditMode = false }: ArticleFormP
   };
 
   const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter(t => t !== tagToRemove));
+    setTags(tags.filter((t) => t !== tagToRemove));
   };
 
-  const handleMediaSelected = (url: string, alt?: string) => {
-    setFeaturedImage(url);
-    if (alt && !imageAlt) {
-      setImageAlt(alt);
-    }
-  };
-
-  // Submit Handler
-  const handleSave = async (targetStatus?: 'draft' | 'published' | 'scheduled') => {
-    const finalStatus = targetStatus || status;
-    setStatus(finalStatus);
+  const handleSave = async (targetStatus: 'draft' | 'published' | 'scheduled') => {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    // Basic Validation
-    if (!title.trim()) {
-      setErrorMessage('Please enter an article title.');
-      return;
+    if (!title.trim()) { setErrorMessage('Please enter an article title.'); return; }
+    if (!content.trim()) { setErrorMessage('Article content cannot be empty.'); return; }
+    if (targetStatus === 'scheduled' && !scheduledAt) {
+      setErrorMessage('Please pick a future scheduled release date in Advanced Settings.'); return;
     }
-    if (!slug.trim()) {
-      setErrorMessage('Please provide a valid URL slug.');
-      return;
-    }
-    if (!excerpt.trim()) {
-      setErrorMessage('Please provide an article summary excerpt.');
-      return;
-    }
-    if (!content.trim()) {
-      setErrorMessage('Article content cannot be empty.');
-      return;
-    }
-    if (finalStatus === 'scheduled' && !scheduledAt) {
-      setErrorMessage('Please pick a future scheduled release date.');
-      return;
-    }
+
+    // Auto-generate slug and excerpt if missing
+    const finalSlug = slug.trim() || generateSlug(title);
+    const finalExcerpt = excerpt.trim() || autoExcerpt(content) || title;
 
     setIsSubmitting(true);
 
     const formData: ArticleFormData = {
       title,
-      slug,
-      excerpt,
+      slug: finalSlug,
+      excerpt: finalExcerpt,
       content,
       featuredImage,
       imageAlt: imageAlt || title,
       category,
-      authorName,
+      authorName: authorName || defaultAuthorName,
       authorRole,
       tags,
-      status: finalStatus,
+      status: targetStatus,
       featured,
-      scheduledAt: finalStatus === 'scheduled' ? new Date(scheduledAt).toISOString() : undefined,
+      scheduledAt: targetStatus === 'scheduled' ? new Date(scheduledAt).toISOString() : undefined,
       seoTitle: seoTitle || title,
-      metaDescription: metaDescription || excerpt,
+      metaDescription: metaDescription || finalExcerpt,
       editorialChecklist,
     };
 
@@ -159,20 +204,20 @@ export function ArticleForm({ initialArticle, isEditMode = false }: ArticleFormP
     if (result.success) {
       setSuccessMessage(
         isEditMode
-          ? `Article updated successfully! Status: ${finalStatus.toUpperCase()}`
-          : `Article created successfully! Status: ${finalStatus.toUpperCase()}`
+          ? `Article updated — ${targetStatus.toUpperCase()}`
+          : `Article saved — ${targetStatus.toUpperCase()}`
       );
-      setTimeout(() => {
-        router.push('/admin/articles');
-      }, 1200);
+      setTimeout(() => router.push('/admin/articles'), 1200);
     } else {
-      setErrorMessage(result.error || 'Failed to save article.');
+      setErrorMessage(result.error ?? 'Failed to save article. Please try again.');
     }
   };
 
+  // ── Render ───────────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-8">
-      {/* Top breadcrumb & back */}
+    <div className="max-w-3xl mx-auto space-y-6 pb-20">
+
+      {/* ── Back link + Demo badge ── */}
       <div className="flex items-center justify-between gap-4">
         <Link
           href="/admin/articles"
@@ -181,64 +226,197 @@ export function ArticleForm({ initialArticle, isEditMode = false }: ArticleFormP
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Articles</span>
         </Link>
-
         {isDemoMode && (
           <span className="text-[11px] font-semibold text-amber-300 bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-full flex items-center gap-1">
             <Sparkles className="w-3 h-3 text-amber-400" />
-            <span>Local Demo Persistence Active</span>
+            <span>Local Demo Mode</span>
           </span>
         )}
       </div>
 
-      {/* Notifications */}
+      {/* ── Notifications ── */}
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs sm:text-sm flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 shrink-0" />
+        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <span>{errorMessage}</span>
         </div>
       )}
       {successMessage && (
-        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs sm:text-sm flex items-center gap-2">
+        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm flex items-center gap-2">
           <CheckCircle className="w-4 h-4 shrink-0" />
           <span>{successMessage}</span>
         </div>
       )}
 
-      {/* Main Grid: Left editor fields (8 cols) + Right publishing sidebar (4 cols) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Tabbed editor workspace */}
-        <div className="lg:col-span-8 space-y-6">
+      {/* ══ MAIN CARD ══════════════════════════════════════════════════════════ */}
+      <div className="bg-[#111522] border border-[#272B3A] rounded-2xl overflow-hidden">
 
-          {/* Always-visible: Title / Slug / Excerpt */}
-          <div className="bg-[#111522] border border-[#272B3A] rounded-2xl p-5 space-y-4">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#A1A1AA] mb-1.5">
-                Article Title <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => handleTitleChange(e.target.value)}
-                placeholder="e.g. Next-Generation Graphics Pipelines: How Mesh Shading Transforms Open-World Rendering"
-                className="w-full px-4 py-3 bg-[#090B12] border border-[#272B3A] rounded-xl text-[#F8FAFC] text-base font-semibold placeholder-[#A1A1AA] focus:outline-hidden focus:border-[#8B5CF6]"
-              />
+        {/* ── Article Title ── */}
+        <div className="p-6 border-b border-[#272B3A]">
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => handleTitleChange(e.target.value)}
+            placeholder="Article title…"
+            className="w-full bg-transparent text-[#F8FAFC] text-2xl font-bold placeholder-[#3D4358] focus:outline-none leading-tight"
+          />
+          {slug && (
+            <p className="mt-2 text-xs text-[#A1A1AA] font-mono">
+              /articles/<span className="text-[#8B5CF6]">{slug || '…'}</span>
+            </p>
+          )}
+        </div>
+
+        {/* ── Featured Image ── */}
+        <div className="p-6 border-b border-[#272B3A] space-y-3">
+          <p className="text-xs font-bold uppercase tracking-wider text-[#A1A1AA]">Featured Image</p>
+
+          {/* Preview */}
+          <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-[#090B12] border border-[#272B3A] group">
+            <Image
+              src={featuredImage}
+              alt={imageAlt || 'Featured image preview'}
+              fill
+              sizes="(max-width: 768px) 100vw, 640px"
+              className="object-cover"
+            />
+            {isImageUploading && (
+              <div className="absolute inset-0 bg-[#090B12]/80 flex flex-col items-center justify-center gap-2">
+                <div className="w-8 h-8 border-2 border-[#8B5CF6] border-t-transparent rounded-full animate-spin" />
+                <p className="text-xs text-[#A1A1AA]">{imageUploadProgress}%</p>
+              </div>
+            )}
+            {/* Hover overlay */}
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-3 py-2 rounded-lg bg-[#8B5CF6] text-white text-xs font-semibold flex items-center gap-1.5"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                Upload New
+              </button>
+              <button
+                type="button"
+                onClick={() => setMediaPickerOpen(true)}
+                className="px-3 py-2 rounded-lg bg-[#171C2B] border border-[#272B3A] text-[#F8FAFC] text-xs font-semibold"
+              >
+                Media Library
+              </button>
             </div>
+          </div>
 
-            {/* URL Slug */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
+          {/* Upload buttons (also visible below preview for clarity) */}
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isImageUploading}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#171C2B] border border-[#272B3A] text-[#F8FAFC] text-xs font-semibold hover:border-[#8B5CF6] transition-colors disabled:opacity-50"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              {isImageUploading ? 'Uploading…' : 'Upload Image'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMediaPickerOpen(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#171C2B] border border-[#272B3A] text-[#A1A1AA] text-xs font-semibold hover:border-[#8B5CF6] hover:text-[#F8FAFC] transition-colors"
+            >
+              Choose from Library
+            </button>
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/avif,image/svg+xml"
+            className="hidden"
+            onChange={handleDirectUpload}
+          />
+        </div>
+
+        {/* ── Category ── */}
+        <div className="p-6 border-b border-[#272B3A]">
+          <label className="block text-xs font-bold uppercase tracking-wider text-[#A1A1AA] mb-2">
+            Category
+          </label>
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value as CategorySlug)}
+            className="w-full px-4 py-3 bg-[#090B12] border border-[#272B3A] rounded-xl text-sm font-semibold text-[#F8FAFC] focus:outline-none focus:border-[#8B5CF6] cursor-pointer transition-colors"
+          >
+            {Object.values(CATEGORIES).map((c) => (
+              <option key={c.slug} value={c.slug}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* ── Content Editor ── */}
+        <div className="p-6 border-b border-[#272B3A]">
+          <label className="block text-xs font-bold uppercase tracking-wider text-[#A1A1AA] mb-3">
+            Article Content
+          </label>
+          <RichTextEditor
+            content={content}
+            onChange={handleContentChange}
+          />
+        </div>
+
+        {/* ── Action Buttons ── */}
+        <div className="p-6 flex flex-col sm:flex-row gap-3">
+          <button
+            type="button"
+            onClick={() => handleSave('published')}
+            disabled={isSubmitting}
+            className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#8B5CF6] hover:bg-[#7c3aed] text-white text-sm font-bold transition-all shadow-lg shadow-[#8B5CF6]/25 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Send className="w-4 h-4" />
+            {isSubmitting ? 'Saving…' : 'Publish Article'}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSave('draft')}
+            disabled={isSubmitting}
+            className="flex-1 sm:flex-none sm:min-w-[160px] flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#171C2B] hover:bg-[#272B3A] border border-[#272B3A] hover:border-[#8B5CF6]/40 text-[#A1A1AA] hover:text-[#F8FAFC] text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Save className="w-4 h-4" />
+            {isSubmitting ? 'Saving…' : 'Save Draft'}
+          </button>
+        </div>
+      </div>
+
+      {/* ══ ADVANCED SETTINGS ════════════════════════════════════════════════ */}
+      <div className="bg-[#111522] border border-[#272B3A] rounded-2xl overflow-hidden">
+        {/* Accordion toggle */}
+        <button
+          type="button"
+          onClick={() => setAdvancedOpen((o) => !o)}
+          className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-[#171C2B] transition-colors"
+        >
+          <span className="text-sm font-bold text-[#F8FAFC]">Advanced Settings</span>
+          {advancedOpen ? (
+            <ChevronUp className="w-4 h-4 text-[#A1A1AA]" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-[#A1A1AA]" />
+          )}
+        </button>
+
+        {advancedOpen && (
+          <div className="border-t border-[#272B3A]">
+            {/* ── Slug ── */}
+            <div className="px-6 pt-5 pb-4 border-b border-[#272B3A]/60 space-y-1.5">
+              <div className="flex items-center justify-between">
                 <label className="text-xs font-bold uppercase tracking-wider text-[#A1A1AA]">
-                  URL Slug <span className="text-red-400">*</span>
+                  URL Slug
                 </label>
                 <button
                   type="button"
-                  onClick={() => {
-                    setSlug(generateSlug(title));
-                    setSlugManuallyEdited(false);
-                  }}
+                  onClick={() => { setSlug(generateSlug(title)); setSlugManuallyEdited(false); }}
                   className="text-[11px] text-[#38BDF8] hover:text-[#8B5CF6] transition-colors"
                 >
-                  Regenerate from Title
+                  Regenerate from title
                 </button>
               </div>
               <div className="flex items-center">
@@ -248,99 +426,194 @@ export function ArticleForm({ initialArticle, isEditMode = false }: ArticleFormP
                 <input
                   type="text"
                   value={slug}
-                  onChange={(e) => {
-                    setSlug(generateSlug(e.target.value));
-                    setSlugManuallyEdited(true);
-                  }}
-                  placeholder="next-gen-graphics-mesh-shading"
-                  className="w-full px-3 py-2.5 bg-[#090B12] border border-[#272B3A] rounded-r-xl text-xs font-mono text-[#F8FAFC] placeholder-[#A1A1AA] focus:outline-hidden focus:border-[#8B5CF6]"
+                  onChange={(e) => { setSlug(generateSlug(e.target.value)); setSlugManuallyEdited(true); }}
+                  placeholder="article-url-slug"
+                  className="w-full px-3 py-2.5 bg-[#090B12] border border-[#272B3A] rounded-r-xl text-xs font-mono text-[#F8FAFC] placeholder-[#A1A1AA] focus:outline-none focus:border-[#8B5CF6]"
                 />
               </div>
             </div>
 
-            {/* Short Excerpt */}
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#A1A1AA] mb-1.5">
-                Article Summary / Excerpt <span className="text-red-400">*</span>
-              </label>
+            {/* ── Excerpt ── */}
+            <div className="px-6 py-4 border-b border-[#272B3A]/60 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold uppercase tracking-wider text-[#A1A1AA]">
+                  Article Excerpt
+                </label>
+                {excerptManuallyEdited && (
+                  <button
+                    type="button"
+                    onClick={() => { setExcerpt(autoExcerpt(content)); setExcerptManuallyEdited(false); }}
+                    className="text-[11px] text-[#38BDF8] hover:text-[#8B5CF6] transition-colors"
+                  >
+                    Auto-generate
+                  </button>
+                )}
+              </div>
               <textarea
                 rows={3}
                 value={excerpt}
-                onChange={(e) => setExcerpt(e.target.value)}
-                placeholder="Brief editorial summary shown on homepage cards, search results, and article headers..."
-                className="w-full px-4 py-2.5 bg-[#090B12] border border-[#272B3A] rounded-xl text-xs sm:text-sm text-[#F8FAFC] placeholder-[#A1A1AA] focus:outline-hidden focus:border-[#8B5CF6]"
+                onChange={(e) => { setExcerpt(e.target.value); setExcerptManuallyEdited(true); }}
+                placeholder="Brief summary shown on cards and search results…"
+                className="w-full px-4 py-2.5 bg-[#090B12] border border-[#272B3A] rounded-xl text-sm text-[#F8FAFC] placeholder-[#A1A1AA] focus:outline-none focus:border-[#8B5CF6]"
               />
             </div>
-          </div>
 
-          {/* Tabbed Workspace */}
-          <div className="bg-[#111522] border border-[#272B3A] rounded-2xl overflow-hidden">
-            {/* Tab Nav */}
-            <div className="flex border-b border-[#272B3A]">
-              {(
-                [
-                  { id: 'content', label: 'Content Editor' },
-                  { id: 'seo', label: 'SEO & Preview' },
-                  { id: 'links', label: 'Internal Links' },
-                  { id: 'checklist', label: 'Editorial Review' },
-                ] as const
-              ).map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 py-3 text-xs font-semibold transition-all border-b-2 ${
-                    activeTab === tab.id
-                      ? 'border-[#8B5CF6] text-[#F8FAFC] bg-[#111522]'
-                      : 'border-transparent text-[#A1A1AA] hover:text-[#F8FAFC] hover:bg-[#090B12]/50'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+            {/* ── Image Alt Text ── */}
+            <div className="px-6 py-4 border-b border-[#272B3A]/60 space-y-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#A1A1AA]">
+                Image Alt Text
+              </label>
+              <input
+                type="text"
+                value={imageAlt}
+                onChange={(e) => setImageAlt(e.target.value)}
+                placeholder="Descriptive text for screen readers and SEO…"
+                className="w-full px-4 py-2.5 bg-[#090B12] border border-[#272B3A] rounded-xl text-sm text-[#F8FAFC] placeholder-[#A1A1AA] focus:outline-none focus:border-[#8B5CF6]"
+              />
             </div>
 
-            <div className="p-5">
-              {/* Content Editor Tab */}
-              {activeTab === 'content' && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-[#A1A1AA]">
-                      Article Content (Rich Text &amp; Headings) <span className="text-red-400">*</span>
-                    </label>
-                    <span className="text-xs text-[#38BDF8]">Markdown &amp; HTML Compatible</span>
-                  </div>
-                  <RichTextEditor
-                    content={content}
-                    onChange={(newHtml) => setContent(newHtml)}
+            {/* ── Tags ── */}
+            <div className="px-6 py-4 border-b border-[#272B3A]/60 space-y-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#A1A1AA]">
+                Tags
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddTag(); } }}
+                  placeholder="Add tag, press Enter…"
+                  className="flex-1 px-3 py-2 bg-[#090B12] border border-[#272B3A] rounded-xl text-xs text-[#F8FAFC] placeholder-[#A1A1AA] focus:outline-none focus:border-[#8B5CF6]"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddTag}
+                  className="px-3 py-2 bg-[#171C2B] border border-[#272B3A] rounded-xl text-xs font-semibold text-[#F8FAFC] hover:border-[#8B5CF6] transition-colors"
+                >
+                  Add
+                </button>
+              </div>
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#171C2B] text-xs font-medium text-[#A1A1AA] border border-[#272B3A]"
+                    >
+                      <TagIcon className="w-3 h-3 text-[#8B5CF6]" />
+                      {tag}
+                      <button type="button" onClick={() => handleRemoveTag(tag)} className="hover:text-red-400 ml-0.5">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ── Publication status + Scheduled date ── */}
+            <div className="px-6 py-4 border-b border-[#272B3A]/60 space-y-3">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#A1A1AA]">
+                Scheduled Publishing
+              </label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as 'draft' | 'published' | 'scheduled')}
+                className="w-full px-4 py-2.5 bg-[#090B12] border border-[#272B3A] rounded-xl text-sm font-semibold text-[#F8FAFC] focus:outline-none focus:border-[#8B5CF6] cursor-pointer"
+              >
+                <option value="draft">Draft (private)</option>
+                <option value="published">Published (live now)</option>
+                <option value="scheduled">Scheduled (timed release)</option>
+              </select>
+              {status === 'scheduled' && (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-[#090B12] border border-[#272B3A]">
+                  <Clock className="w-4 h-4 text-[#38BDF8] shrink-0" />
+                  <input
+                    type="datetime-local"
+                    value={scheduledAt}
+                    onChange={(e) => setScheduledAt(e.target.value)}
+                    className="flex-1 bg-transparent text-xs text-[#F8FAFC] focus:outline-none"
                   />
                 </div>
               )}
+            </div>
 
-              {/* SEO & Preview Tab */}
-              {activeTab === 'seo' && (
-                <div className="space-y-6">
-                  {/* SEO Analysis Panel (real-time checks) */}
-                  <SeoAnalysisPanel
-                    title={title}
-                    seoTitle={seoTitle}
-                    metaDescription={metaDescription}
-                    excerpt={excerpt}
-                    slug={slug}
-                    content={content}
-                    featuredImage={featuredImage}
-                    imageAlt={imageAlt}
-                    category={category}
-                    authorName={authorName}
-                  />
+            {/* ── Featured toggle ── */}
+            <div className="px-6 py-4 border-b border-[#272B3A]/60">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={featured}
+                  onChange={(e) => setFeatured(e.target.checked)}
+                  className="w-4 h-4 rounded border-[#272B3A] bg-[#090B12] text-[#8B5CF6] focus:ring-0 cursor-pointer"
+                />
+                <span className="text-sm font-medium text-[#F8FAFC]">Featured Story</span>
+                <span className="text-xs text-[#A1A1AA]">(shown on homepage hero)</span>
+              </label>
+            </div>
 
-                  {/* SEO Title & Meta Description fields */}
-                  <div className="space-y-4 p-5 bg-[#090B12] rounded-xl border border-[#272B3A]">
-                    <h4 className="text-sm font-bold text-[#F8FAFC]">Search Engine Fields</h4>
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <label className="text-xs font-semibold text-[#A1A1AA]">
-                          Custom SEO Title Tag (Optional override)
+            {/* ── Author byline (advanced) ── */}
+            <div className="px-6 py-4 border-b border-[#272B3A]/60 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#A1A1AA]">
+                  Author Name
+                </label>
+                <input
+                  type="text"
+                  value={authorName}
+                  onChange={(e) => setAuthorName(e.target.value)}
+                  placeholder="Author name"
+                  className="w-full px-3 py-2.5 bg-[#090B12] border border-[#272B3A] rounded-xl text-sm text-[#F8FAFC] placeholder-[#A1A1AA] focus:outline-none focus:border-[#8B5CF6]"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[#A1A1AA]">
+                  Author Role / Title
+                </label>
+                <input
+                  type="text"
+                  value={authorRole}
+                  onChange={(e) => setAuthorRole(e.target.value)}
+                  placeholder="e.g. Senior Editor"
+                  className="w-full px-3 py-2.5 bg-[#090B12] border border-[#272B3A] rounded-xl text-sm text-[#F8FAFC] placeholder-[#A1A1AA] focus:outline-none focus:border-[#8B5CF6]"
+                />
+              </div>
+            </div>
+
+            {/* ── SEO / Links / Checklist tabs ── */}
+            <div>
+              {/* Tab bar */}
+              <div className="flex border-b border-[#272B3A]">
+                {([
+                  { id: 'seo', label: 'SEO & Preview' },
+                  { id: 'links', label: 'Internal Links' },
+                  { id: 'checklist', label: 'Editorial Review' },
+                ] as const).map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setAdvancedTab(tab.id)}
+                    className={`px-4 py-3 text-xs font-semibold transition-all border-b-2 ${
+                      advancedTab === tab.id
+                        ? 'border-[#8B5CF6] text-[#F8FAFC]'
+                        : 'border-transparent text-[#A1A1AA] hover:text-[#F8FAFC] hover:bg-[#090B12]/50'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="p-6 space-y-6">
+                {/* SEO tab */}
+                {advancedTab === 'seo' && (
+                  <div className="space-y-5">
+                    {/* SEO Title */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold uppercase tracking-wider text-[#A1A1AA]">
+                          SEO Title
                         </label>
                         <span className={`text-[10px] font-bold ${(seoTitle || title).length > 65 ? 'text-rose-400' : 'text-emerald-400'}`}>
                           {(seoTitle || title).length}/65
@@ -350,15 +623,17 @@ export function ArticleForm({ initialArticle, isEditMode = false }: ArticleFormP
                         type="text"
                         value={seoTitle}
                         onChange={(e) => setSeoTitle(e.target.value)}
-                        placeholder={title || 'Leave blank to use Article Title'}
+                        placeholder={title || 'Leave blank to use article title'}
                         maxLength={70}
-                        className="w-full px-4 py-2.5 bg-[#111522] border border-[#272B3A] rounded-xl text-xs sm:text-sm text-[#F8FAFC] placeholder-[#A1A1AA] focus:outline-hidden focus:border-[#8B5CF6]"
+                        className="w-full px-4 py-2.5 bg-[#090B12] border border-[#272B3A] rounded-xl text-sm text-[#F8FAFC] placeholder-[#A1A1AA] focus:outline-none focus:border-[#8B5CF6]"
                       />
                     </div>
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <label className="text-xs font-semibold text-[#A1A1AA]">
-                          Custom Meta Description (Optional override)
+
+                    {/* Meta Description */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold uppercase tracking-wider text-[#A1A1AA]">
+                          Meta Description
                         </label>
                         <span className={`text-[10px] font-bold ${(metaDescription || excerpt).length > 160 ? 'text-rose-400' : 'text-emerald-400'}`}>
                           {(metaDescription || excerpt).length}/160
@@ -368,273 +643,56 @@ export function ArticleForm({ initialArticle, isEditMode = false }: ArticleFormP
                         rows={3}
                         value={metaDescription}
                         onChange={(e) => setMetaDescription(e.target.value)}
-                        placeholder={excerpt || 'Leave blank to use Article Excerpt'}
+                        placeholder={excerpt || 'Leave blank to use article excerpt'}
                         maxLength={170}
-                        className="w-full px-4 py-2.5 bg-[#111522] border border-[#272B3A] rounded-xl text-xs sm:text-sm text-[#F8FAFC] placeholder-[#A1A1AA] focus:outline-hidden focus:border-[#8B5CF6]"
+                        className="w-full px-4 py-2.5 bg-[#090B12] border border-[#272B3A] rounded-xl text-sm text-[#F8FAFC] placeholder-[#A1A1AA] focus:outline-none focus:border-[#8B5CF6]"
                       />
                     </div>
+
+                    {/* SEO Analysis */}
+                    <SeoAnalysisPanel
+                      title={title}
+                      seoTitle={seoTitle}
+                      metaDescription={metaDescription}
+                      excerpt={excerpt}
+                      slug={slug}
+                      content={content}
+                      featuredImage={featuredImage}
+                      imageAlt={imageAlt}
+                      category={category}
+                      authorName={authorName}
+                    />
+
+                    {/* SERP Preview */}
+                    <SeoSnippetPreview
+                      title={seoTitle || title}
+                      slug={slug}
+                      metaDescription={metaDescription || excerpt}
+                    />
                   </div>
-
-                  {/* SERP Snippet Preview */}
-                  <SeoSnippetPreview
-                    title={seoTitle || title}
-                    slug={slug}
-                    metaDescription={metaDescription || excerpt}
-                  />
-                </div>
-              )}
-
-              {/* Internal Links Tab */}
-              {activeTab === 'links' && (
-                <InternalLinkSuggester
-                  currentSlug={slug}
-                  currentCategory={category}
-                  currentTags={tags}
-                  content={content}
-                />
-              )}
-
-              {/* Editorial Checklist Tab */}
-              {activeTab === 'checklist' && (
-                <EditorialChecklist
-                  values={editorialChecklist}
-                  onChange={setEditorialChecklist}
-                />
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Sidebar: Publishing Controls, Meta, Featured Image, Tags */}
-        <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-20">
-          {/* Publishing Action Box */}
-          <div className="bg-[#111522] border border-[#272B3A] rounded-2xl p-5 space-y-4 shadow-xl">
-            <h3 className="text-sm font-bold text-[#F8FAFC] pb-2 border-b border-[#272B3A]">
-              Publishing Workflow
-            </h3>
-
-            {/* Status Selector */}
-            <div>
-              <label className="block text-xs font-semibold text-[#A1A1AA] mb-1.5">
-                Publication Status
-              </label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as 'draft' | 'published' | 'scheduled')}
-                className="w-full px-3 py-2 bg-[#090B12] border border-[#272B3A] rounded-xl text-xs font-semibold text-[#F8FAFC] focus:outline-hidden focus:border-[#8B5CF6] cursor-pointer"
-              >
-                <option value="draft">Draft (Private to Editors)</option>
-                <option value="published">Published (Live Publicly)</option>
-                <option value="scheduled">Scheduled (Timed Release)</option>
-              </select>
-            </div>
-
-            {/* Scheduled Date Picker */}
-            {status === 'scheduled' && (
-              <div className="p-3 rounded-xl bg-[#171C2B] border border-[#272B3A] space-y-1.5">
-                <label className="block text-xs font-semibold text-[#38BDF8]">
-                  Release Date &amp; Time
-                </label>
-                <input
-                  type="datetime-local"
-                  value={scheduledAt}
-                  onChange={(e) => setScheduledAt(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-[#090B12] border border-[#272B3A] rounded-lg text-xs text-[#F8FAFC] focus:outline-hidden focus:border-[#8B5CF6]"
-                />
-              </div>
-            )}
-
-            {/* Featured toggle */}
-            <label className="flex items-center gap-2.5 cursor-pointer pt-1">
-              <input
-                type="checkbox"
-                checked={featured}
-                onChange={(e) => setFeatured(e.target.checked)}
-                className="w-4 h-4 rounded-sm border-[#272B3A] bg-[#090B12] text-[#8B5CF6] focus:ring-0 cursor-pointer"
-              />
-              <span className="text-xs font-medium text-[#F8FAFC]">
-                Mark as Featured Story (Homepage Hero)
-              </span>
-            </label>
-
-            {/* Workflow Buttons */}
-            <div className="pt-3 border-t border-[#272B3A] space-y-2">
-              <button
-                type="button"
-                disabled={isSubmitting}
-                onClick={() => handleSave(status === 'draft' ? 'draft' : status)}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#8B5CF6] hover:bg-[#7c3aed] text-white text-xs sm:text-sm font-semibold transition-all shadow-md shadow-[#8B5CF6]/20 disabled:opacity-50"
-              >
-                {status === 'published' ? (
-                  <>
-                    <Send className="w-4 h-4" />
-                    <span>{isSubmitting ? 'Saving...' : 'Publish Article'}</span>
-                  </>
-                ) : status === 'scheduled' ? (
-                  <>
-                    <Clock className="w-4 h-4" />
-                    <span>{isSubmitting ? 'Scheduling...' : 'Schedule Article'}</span>
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    <span>{isSubmitting ? 'Saving...' : 'Save Draft'}</span>
-                  </>
                 )}
-              </button>
 
-              {status !== 'draft' && (
-                <button
-                  type="button"
-                  disabled={isSubmitting}
-                  onClick={() => handleSave('draft')}
-                  className="w-full px-4 py-2 rounded-xl bg-[#171C2B] hover:bg-[#272B3A] text-xs font-semibold text-[#A1A1AA] hover:text-[#F8FAFC] border border-[#272B3A] transition-colors"
-                >
-                  Save as Draft Instead
-                </button>
-              )}
+                {/* Internal Links tab */}
+                {advancedTab === 'links' && (
+                  <InternalLinkSuggester
+                    currentSlug={slug}
+                    currentCategory={category}
+                    currentTags={tags}
+                    content={content}
+                  />
+                )}
+
+                {/* Editorial Checklist tab */}
+                {advancedTab === 'checklist' && (
+                  <EditorialChecklist
+                    values={editorialChecklist}
+                    onChange={setEditorialChecklist}
+                  />
+                )}
+              </div>
             </div>
           </div>
-
-          {/* Category & Author Settings */}
-          <div className="bg-[#111522] border border-[#272B3A] rounded-2xl p-5 space-y-4">
-            <h3 className="text-sm font-bold text-[#F8FAFC] pb-2 border-b border-[#272B3A]">
-              Taxonomy &amp; Byline
-            </h3>
-
-            {/* Category Select */}
-            <div>
-              <label className="block text-xs font-semibold text-[#A1A1AA] mb-1.5">
-                Editorial Category
-              </label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value as CategorySlug)}
-                className="w-full px-3 py-2 bg-[#090B12] border border-[#272B3A] rounded-xl text-xs font-semibold text-[#F8FAFC] focus:outline-hidden focus:border-[#8B5CF6] cursor-pointer"
-              >
-                {Object.values(CATEGORIES).map((c) => (
-                  <option key={c.slug} value={c.slug}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Author Name */}
-            <div>
-              <label className="block text-xs font-semibold text-[#A1A1AA] mb-1.5">
-                Author Byline
-              </label>
-              <input
-                type="text"
-                value={authorName}
-                onChange={(e) => setAuthorName(e.target.value)}
-                placeholder="Elena Rostova"
-                className="w-full px-3 py-2 bg-[#090B12] border border-[#272B3A] rounded-xl text-xs text-[#F8FAFC] focus:outline-hidden focus:border-[#8B5CF6]"
-              />
-            </div>
-
-            {/* Author Role */}
-            <div>
-              <label className="block text-xs font-semibold text-[#A1A1AA] mb-1.5">
-                Author Role / Title
-              </label>
-              <input
-                type="text"
-                value={authorRole}
-                onChange={(e) => setAuthorRole(e.target.value)}
-                placeholder="Senior Tech Editor"
-                className="w-full px-3 py-2 bg-[#090B12] border border-[#272B3A] rounded-xl text-xs text-[#F8FAFC] focus:outline-hidden focus:border-[#8B5CF6]"
-              />
-            </div>
-          </div>
-
-          {/* Featured Image Box */}
-          <div className="bg-[#111522] border border-[#272B3A] rounded-2xl p-5 space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-[#272B3A]">
-              <h3 className="text-sm font-bold text-[#F8FAFC]">Featured Thumbnail</h3>
-              <button
-                type="button"
-                onClick={() => setMediaPickerOpen(true)}
-                className="text-xs font-semibold text-[#8B5CF6] hover:text-[#38BDF8] transition-colors"
-              >
-                Choose from Library
-              </button>
-            </div>
-
-            <div className="relative aspect-video rounded-xl overflow-hidden bg-[#090B12] border border-[#272B3A]">
-              <Image
-                src={featuredImage}
-                alt={imageAlt || 'Featured thumbnail preview'}
-                fill
-                sizes="(max-width: 640px) 100vw, 30vw"
-                className="object-cover"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-[#A1A1AA] mb-1">
-                Image Alt Text <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="text"
-                value={imageAlt}
-                onChange={(e) => setImageAlt(e.target.value)}
-                placeholder="Descriptive accessibility alt text..."
-                className="w-full px-3 py-2 bg-[#090B12] border border-[#272B3A] rounded-xl text-xs text-[#F8FAFC] focus:outline-hidden focus:border-[#8B5CF6]"
-              />
-            </div>
-          </div>
-
-          {/* Tags Box */}
-          <div className="bg-[#111522] border border-[#272B3A] rounded-2xl p-5 space-y-3">
-            <h3 className="text-sm font-bold text-[#F8FAFC] pb-2 border-b border-[#272B3A]">
-              Tags
-            </h3>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddTag();
-                  }
-                }}
-                placeholder="Add tag and press Enter..."
-                className="w-full px-3 py-2 bg-[#090B12] border border-[#272B3A] rounded-xl text-xs text-[#F8FAFC] focus:outline-hidden focus:border-[#8B5CF6]"
-              />
-              <button
-                type="button"
-                onClick={handleAddTag}
-                className="px-3 py-2 bg-[#171C2B] hover:bg-[#8B5CF6] text-xs font-semibold text-[#F8FAFC] rounded-xl border border-[#272B3A] transition-colors shrink-0"
-              >
-                Add
-              </button>
-            </div>
-
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#171C2B] text-xs font-medium text-[#A1A1AA] border border-[#272B3A]"
-                >
-                  <TagIcon className="w-3 h-3 text-[#8B5CF6]" />
-                  <span>{tag}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveTag(tag)}
-                    className="hover:text-red-400 ml-0.5"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Media Picker Modal */}

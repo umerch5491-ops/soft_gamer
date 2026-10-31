@@ -29,7 +29,7 @@ export default function AdminEditArticlePage({ params }: EditArticlePageProps) {
   }, [articleId]);
 
   return (
-    <AdminLayout pageTitle="Edit Editorial Article">
+    <AdminLayout pageTitle="Edit Article">
       <div className="max-w-6xl mx-auto">
         {isLoading ? (
           <div className="p-12 text-center text-[#A1A1AA]">

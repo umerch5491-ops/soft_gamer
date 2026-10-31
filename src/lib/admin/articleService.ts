@@ -148,7 +148,41 @@ export async function saveArticle(
   const supabase = getSupabaseClient();
   if (supabase && isSupabaseConfigured()) {
     try {
-      // In production Supabase flow
+      // In production Supabase flow: resolve foreign key UUIDs
+      let resolvedCategoryId: string = formData.category;
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(resolvedCategoryId)) {
+        const { data: catRow } = await supabase
+          .from('categories')
+          .select('id')
+          .eq('slug', formData.category)
+          .maybeSingle();
+        if (catRow && 'id' in catRow) {
+          resolvedCategoryId = (catRow as { id: string }).id;
+        }
+      }
+
+      let resolvedAuthorId: string = formData.authorName;
+      if (!uuidRegex.test(resolvedAuthorId)) {
+        const { data: authRow } = await supabase
+          .from('authors')
+          .select('id')
+          .ilike('name', formData.authorName.trim())
+          .maybeSingle();
+        if (authRow && 'id' in authRow) {
+          resolvedAuthorId = (authRow as { id: string }).id;
+        } else {
+          const { data: fallbackAuth } = await supabase
+            .from('authors')
+            .select('id')
+            .limit(1)
+            .maybeSingle();
+          if (fallbackAuth && 'id' in fallbackAuth) {
+            resolvedAuthorId = (fallbackAuth as { id: string }).id;
+          }
+        }
+      }
+
       const articlePayload: Database['public']['Tables']['articles']['Insert'] = {
         title: formData.title,
         slug: formData.slug,
@@ -156,8 +190,8 @@ export async function saveArticle(
         content: formData.content,
         featured_image: formData.featuredImage,
         image_alt: formData.imageAlt || formData.title,
-        category_id: formData.category,
-        author_id: formData.authorName,
+        category_id: resolvedCategoryId,
+        author_id: resolvedAuthorId,
         seo_title: formData.seoTitle || formData.title,
         meta_description: formData.metaDescription || formData.excerpt,
         tags: formData.tags,
