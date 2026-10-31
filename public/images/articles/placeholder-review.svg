@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="100%" height="100%">
+  <defs>
+    <linearGradient id="review-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#090B12"/>
+      <stop offset="50%" stop-color="#121024"/>
+      <stop offset="100%" stop-color="#171C2B"/>
+    </linearGradient>
+    <linearGradient id="indigo-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" fill="url(#review-bg)"/>
+  
+  <!-- Modern diamond emblem -->
+  <polygon points="600,197 730,337 600,477 470,337" fill="#171C2B" stroke="url(#indigo-glow)" stroke-width="2.5"/>
+  <polygon points="600,247 680,337 600,427 520,337" fill="#090B12" stroke="#272B3A" stroke-width="1.5"/>
+
+  <text x="600" y="328" font-family="system-ui, sans-serif" font-size="24" font-weight="800" fill="#F8FAFC" text-anchor="middle" letter-spacing="4">EDITORIAL CRITIQUE</text>
+  <text x="600" y="358" font-family="system-ui, sans-serif" font-size="13" font-weight="600" fill="#6366F1" text-anchor="middle" letter-spacing="2">UNBIASED MECHANICS BREAKDOWN</text>
+
+  <text x="60" y="615" font-family="system-ui, sans-serif" font-size="20" font-weight="700" fill="#F8FAFC" letter-spacing="2">SOFT GAMER</text>
+  <text x="220" y="615" font-family="system-ui, sans-serif" font-size="14" font-weight="500" fill="#A1A1AA" letter-spacing="1">| EDITORIAL REVIEWS</text>
+</svg>
+
