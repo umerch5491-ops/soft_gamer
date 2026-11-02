@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Lock,
   Mail,
   ArrowRight,
-  Sparkles,
   ArrowLeft,
   Info,
   Eye,
@@ -17,20 +16,13 @@ import { useAuth } from '@/lib/auth/authContext';
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const { user, login, isLoading: isAuthLoading, isDemoMode } = useAuth();
+  const { login } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // If already authenticated, redirect straight to dashboard
-  useEffect(() => {
-    if (!isAuthLoading && user) {
-      router.replace('/admin');
-    }
-  }, [user, isAuthLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,24 +35,7 @@ export default function AdminLoginPage() {
     if (result.success) {
       router.push('/admin');
     } else {
-      setError(result.error || 'Authentication failed. Please verify your credentials.');
-    }
-  };
-
-  const handleQuickAdminLogin = async () => {
-    setIsSubmitting(true);
-    setError(null);
-    const adminEmail = 'admin@softgamer.dev';
-    const adminPass = 'demo-password';
-    setEmail(adminEmail);
-    setPassword(adminPass);
-
-    const result = await login(adminEmail, adminPass);
-    setIsSubmitting(false);
-    if (result.success) {
-      router.push('/admin');
-    } else {
-      setError(result.error || 'Failed to authenticate');
+      setError(result.error || 'Invalid email or password. Please try again.');
     }
   };
 
@@ -91,30 +66,6 @@ export default function AdminLoginPage() {
             </p>
           </div>
 
-          {/* Quick Access Helper */}
-          <div className="p-3.5 rounded-xl bg-[#171C2B] border border-[#272B3A] text-xs text-[#A1A1AA] space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-[#F8FAFC] font-semibold text-xs">
-                <Sparkles className="w-3.5 h-3.5 text-[#8B5CF6]" />
-                <span>Quick Admin Access</span>
-              </div>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#8B5CF6]/20 text-[#8B5CF6] font-medium">
-                {isDemoMode ? 'Demo Mode' : 'Instant Login'}
-              </span>
-            </div>
-            <p className="text-[11px] text-[#A1A1AA] leading-relaxed">
-              Click below to instantly sign in with Admin privileges:
-            </p>
-            <button
-              type="button"
-              onClick={handleQuickAdminLogin}
-              disabled={isSubmitting}
-              className="w-full py-2.5 px-3 bg-[#8B5CF6] hover:bg-[#7c3aed] text-white font-semibold rounded-lg text-xs transition-colors cursor-pointer text-center disabled:opacity-50 shadow-md shadow-[#8B5CF6]/20"
-            >
-              Log In as Admin
-            </button>
-          </div>
-
           {error && (
             <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs leading-relaxed">
               {error}
@@ -134,7 +85,7 @@ export default function AdminLoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@softgamer.dev or umerjamil126@gmail.com"
+                  placeholder="umerch5491@gmail.com"
                   className="w-full pl-9 pr-3 py-2.5 bg-[#090B12] border border-[#272B3A] rounded-xl text-xs sm:text-sm text-[#F8FAFC] placeholder-[#64748B] focus:outline-hidden focus:border-[#8B5CF6] transition-colors"
                 />
               </div>
@@ -175,7 +126,7 @@ export default function AdminLoginPage() {
               disabled={isSubmitting}
               className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#8B5CF6] hover:bg-[#7c3aed] text-white text-xs sm:text-sm font-semibold transition-all shadow-md shadow-[#8B5CF6]/20 disabled:opacity-50 cursor-pointer"
             >
-              <span>{isSubmitting ? 'Signing In...' : 'Sign In to Portal'}</span>
+              <span>{isSubmitting ? 'Verifying...' : 'Sign In to Portal'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
@@ -183,7 +134,7 @@ export default function AdminLoginPage() {
           {/* Security policy footnote */}
           <div className="pt-2 text-center text-[11px] text-[#A1A1AA] flex items-center justify-center gap-1.5">
             <Info className="w-3.5 h-3.5 text-[#38BDF8]" />
-            <span>Public user registrations are disabled by security policy.</span>
+            <span>Authorized staff and administration access only.</span>
           </div>
         </div>
       </div>

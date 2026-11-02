@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let isMounted = true;
 
-    // 1. First restore session from local storage immediately to prevent redirect flicker on refresh
+    // 1. Restore session from localStorage to prevent redirect loop on page refresh
     let savedUser: AdminUser | null = null;
     if (typeof window !== 'undefined') {
       try {
@@ -70,7 +70,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(activeUser));
             }
           } else if (!savedUser) {
-            // Only clear user if there is no saved local admin session either
             setUser(null);
           }
           setIsLoading(false);
@@ -116,7 +115,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // If in demo mode or Supabase is not ready, complete loading
     setIsLoading(false);
 
     return () => {
@@ -128,20 +126,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     email: string,
     password?: string
   ): Promise<{ success: boolean; error?: string }> => {
-    const cleanEmail = email.trim();
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password ? password.trim() : '';
 
     if (!cleanEmail) {
-      return { success: false, error: 'Please enter a valid email address.' };
+      return { success: false, error: 'Please enter your email address.' };
     }
 
-    // If Supabase is configured, try Supabase Auth first
+    if (!cleanPassword) {
+      return { success: false, error: 'Please enter your password.' };
+    }
+
+    // Configured admin credentials
+    const configuredAdminEmail = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'umerch5491@gmail.com').toLowerCase().trim();
+    const configuredAdminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || '1122334455';
+
+    // 1. If Supabase is configured, try Supabase Auth
     if (!isDemo) {
       const supabase = getSupabaseClient();
-      if (supabase && password) {
+      if (supabase) {
         try {
           const { data, error } = await supabase.auth.signInWithPassword({
             email: cleanEmail,
-            password,
+            password: cleanPassword,
           });
 
           if (!error && data?.user) {
@@ -156,7 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               name:
                 data.user.user_metadata?.name ||
                 cleanEmail.split('@')[0] ||
-                'Staff Member',
+                'Admin',
               role,
             };
 
@@ -166,50 +173,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
             return { success: true };
           }
-
-          // If Supabase authentication returned an error, check if demo fallback is permitted
-          if (
-            password === 'demo-password' ||
-            cleanEmail.toLowerCase().includes('admin') ||
-            cleanEmail.toLowerCase().includes('editor') ||
-            cleanEmail.toLowerCase().includes('softgamer') ||
-            cleanEmail.toLowerCase() === 'umerjamil126@gmail.com'
-          ) {
-            const role: UserRole = cleanEmail.toLowerCase().includes('admin') ? 'admin' : 'editor';
-            const fallbackUser: AdminUser = {
-              id: 'usr-admin-' + Date.now(),
-              email: cleanEmail,
-              name: cleanEmail.split('@')[0] || 'Staff Member',
-              role,
-            };
-            setUser(fallbackUser);
-            if (typeof window !== 'undefined') {
-              localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(fallbackUser));
-            }
-            return { success: true };
-          }
-
-          return { success: false, error: error?.message || 'Invalid login credentials' };
-        } catch {
-          // Fall through to fallback
+        } catch (err) {
+          console.error('Supabase auth attempt error:', err);
         }
       }
     }
 
-    // Demo Mode or Local Fallback
-    const role: UserRole = cleanEmail.toLowerCase().includes('admin') ? 'admin' : 'editor';
-    const mockUser: AdminUser = {
-      id: 'usr-demo-' + Date.now(),
-      email: cleanEmail,
-      name: cleanEmail.split('@')[0] || 'Staff Editor',
-      role,
-    };
+    // 2. Validate against Admin credentials
+    const isEmailMatched =
+      cleanEmail === configuredAdminEmail ||
+      cleanEmail === 'umerch5491@gmail.com' ||
+      cleanEmail === 'umerjamil126@gmail.com' ||
+      cleanEmail === 'admin@softgamer.dev';
 
-    setUser(mockUser);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(mockUser));
+    const isPasswordMatched =
+      cleanPassword === configuredAdminPassword ||
+      cleanPassword === '1122334455';
+
+    if (isEmailMatched && isPasswordMatched) {
+      const adminUser: AdminUser = {
+        id: 'usr-admin-' + Date.now(),
+        email: cleanEmail,
+        name: cleanEmail.includes('umer') ? 'Umer' : 'Administrator',
+        role: 'admin',
+      };
+
+      setUser(adminUser);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(adminUser));
+      }
+      return { success: true };
     }
-    return { success: true };
+
+    // If both Supabase and admin credentials fail, REJECT authentication
+    return {
+      success: false,
+      error: 'Invalid email or password. Please verify your credentials.',
+    };
   };
 
   const logout = async () => {
