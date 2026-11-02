@@ -27,12 +27,12 @@ export function getSupabaseClient(): SupabaseClient<Database> | null {
   if (!supabaseInstance) {
     supabaseInstance = createClient<Database>(supabaseUrl!, supabaseAnonKey!, {
       auth: {
-        persistSession: false,
-        autoRefreshToken: false,
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
       },
     });
   }
 
   return supabaseInstance;
 }
-
