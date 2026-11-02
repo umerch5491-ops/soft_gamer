@@ -17,8 +17,8 @@ export const SITE_CONFIG = {
     name: 'Soft Gamer Editorial',
     legalName: 'Soft Gamer Publishing',
     logo: '/images/og-default.svg',
-    email: 'editorial@softgamer.dev',
-    contactEmail: 'contact@softgamer.dev',
+    email: 'umerjamil126@gmail.com',
+    contactEmail: 'umerjamil126@gmail.com',
   },
   editorialDescription: 'Soft Gamer is an independent gaming publication dedicated to delivering high-signal editorial commentary, system architecture deep-dives, competitive gameplay guides, and unbiased reviews.',
   copyrightNotice: `© ${new Date().getFullYear()} Soft Gamer. All rights reserved.`,
@@ -75,4 +75,3 @@ export function formatDate(dateString: string): string {
     return dateString;
   }
 }
-

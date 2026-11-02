@@ -20,11 +20,11 @@ export default function AdminSettingsPage() {
   // General Settings
   const [siteName, setSiteName] = useState(SITE_CONFIG.name);
   const [siteDescription, setSiteDescription] = useState(SITE_CONFIG.description);
-  const [editorialEmail, setEditorialEmail] = useState('editorial@softgamer.dev');
-  const [contactEmail, setContactEmail] = useState('contact@softgamer.dev');
+  const [editorialEmail, setEditorialEmail] = useState('umerjamil126@gmail.com');
+  const [contactEmail, setContactEmail] = useState('umerjamil126@gmail.com');
   const [twitterHandle, setTwitterHandle] = useState('@SoftGamerEditorial');
-  const [publisherEntity, setPublisherEntity] = useState('Soft Gamer Publishing LLC');
-  const [publisherAddress, setPublisherAddress] = useState('[SITE OWNER: Insert legal registered address]');
+  const [publisherEntity, setPublisherEntity] = useState('Soft Gamer Publishing');
+  const [publisherAddress, setPublisherAddress] = useState('Digital Gaming Desk & Editorial Office');
 
   // Notifications
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
@@ -48,12 +48,12 @@ export default function AdminSettingsPage() {
   };
 
   return (
-    <AdminLayout pageTitle="CMS &amp; System Settings">
+    <AdminLayout pageTitle="CMS & System Settings">
       <div className="max-w-4xl space-y-8">
         {/* Header */}
         <div>
           <h2 className="text-xl sm:text-2xl font-extrabold text-[#F8FAFC]">
-            Publication &amp; Architecture Settings
+            Publication & Architecture Settings
           </h2>
           <p className="text-xs sm:text-sm text-[#A1A1AA]">
             Manage brand metadata, editorial routing, and cloud infrastructure connectivity.
@@ -90,7 +90,7 @@ export default function AdminSettingsPage() {
             <button
               type="button"
               onClick={copyEnvSnippet}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#171C2B] hover:bg-[#8B5CF6] text-xs font-semibold text-[#F8FAFC] border border-[#272B3A] transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#171C2B] hover:bg-[#8B5CF6] text-xs font-semibold text-[#F8FAFC] border border-[#272B3A] transition-colors cursor-pointer"
             >
               {copiedEnv ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               <span>Copy .env Template</span>
@@ -100,11 +100,11 @@ export default function AdminSettingsPage() {
           <div className="space-y-2 text-xs text-[#A1A1AA] pt-2">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>Phase 2 PostgreSQL DDL schema &amp; indexes generated in <code>supabase/migrations/001_initial_schema.sql</code></span>
+              <span>Phase 2 PostgreSQL DDL schema & indexes generated in <code>supabase/migrations/001_initial_schema.sql</code></span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>Storage policies &amp; bucket DDL created in <code>supabase/migrations/002_storage_setup.sql</code></span>
+              <span>Storage policies & bucket DDL created in <code>supabase/migrations/002_storage_setup.sql</code></span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -167,7 +167,7 @@ export default function AdminSettingsPage() {
 
             <div>
               <label className="block text-xs font-semibold text-[#A1A1AA] mb-1.5">
-                Default Editorial Description (Used in Footer &amp; Social Previews)
+                Default Editorial Description (Used in Footer & Social Previews)
               </label>
               <textarea
                 rows={3}
@@ -182,7 +182,7 @@ export default function AdminSettingsPage() {
           <div className="bg-[#111522] border border-[#272B3A] rounded-2xl p-6 space-y-5">
             <h3 className="text-base font-bold text-[#F8FAFC] pb-2 border-b border-[#272B3A] flex items-center gap-2">
               <Shield className="w-4 h-4 text-[#38BDF8]" />
-              <span>Publisher &amp; Ownership Compliance</span>
+              <span>Publisher & Ownership Compliance</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -213,7 +213,7 @@ export default function AdminSettingsPage() {
 
             <div>
               <label className="block text-xs font-semibold text-[#A1A1AA] mb-1.5">
-                Corporate Address Placeholder
+                Corporate / Editorial Address
               </label>
               <input
                 type="text"
@@ -227,7 +227,7 @@ export default function AdminSettingsPage() {
           <div className="flex items-center justify-end gap-4 pt-2">
             <button
               type="submit"
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#8B5CF6] hover:bg-[#7c3aed] text-white text-xs sm:text-sm font-semibold transition-all shadow-md shadow-[#8B5CF6]/20"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#8B5CF6] hover:bg-[#7c3aed] text-white text-xs sm:text-sm font-semibold transition-all shadow-md shadow-[#8B5CF6]/20 cursor-pointer"
             >
               <Save className="w-4 h-4" />
               <span>Save Configuration</span>
