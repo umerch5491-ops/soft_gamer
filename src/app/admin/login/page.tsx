@@ -47,15 +47,15 @@ export default function AdminLoginPage() {
     }
   };
 
-  const handleQuickLogin = async (role: 'admin' | 'editor') => {
+  const handleQuickAdminLogin = async () => {
     setIsSubmitting(true);
     setError(null);
-    const quickEmail = role === 'admin' ? 'admin@softgamer.dev' : 'editor@softgamer.dev';
-    const quickPass = 'demo-password';
-    setEmail(quickEmail);
-    setPassword(quickPass);
+    const adminEmail = 'admin@softgamer.dev';
+    const adminPass = 'demo-password';
+    setEmail(adminEmail);
+    setPassword(adminPass);
 
-    const result = await login(quickEmail, quickPass);
+    const result = await login(adminEmail, adminPass);
     setIsSubmitting(false);
     if (result.success) {
       router.push('/admin');
@@ -87,7 +87,7 @@ export default function AdminLoginPage() {
               Soft Gamer CMS
             </h2>
             <p className="text-xs text-[#A1A1AA]">
-              Staff &amp; Editorial Publishing Portal
+              Administration &amp; Publishing Portal
             </p>
           </div>
 
@@ -96,33 +96,23 @@ export default function AdminLoginPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5 text-[#F8FAFC] font-semibold text-xs">
                 <Sparkles className="w-3.5 h-3.5 text-[#8B5CF6]" />
-                <span>Quick Staff Access</span>
+                <span>Quick Admin Access</span>
               </div>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#8B5CF6]/20 text-[#8B5CF6] font-medium">
-                {isDemoMode ? 'Demo Mode' : 'Instant Fill'}
+                {isDemoMode ? 'Demo Mode' : 'Instant Login'}
               </span>
             </div>
             <p className="text-[11px] text-[#A1A1AA] leading-relaxed">
-              Click below to instantly log in as Admin or Staff Editor:
+              Click below to instantly sign in with Admin privileges:
             </p>
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('admin')}
-                disabled={isSubmitting}
-                className="px-3 py-2 bg-[#8B5CF6] hover:bg-[#7c3aed] text-white font-semibold rounded-lg text-xs transition-colors cursor-pointer text-center disabled:opacity-50"
-              >
-                Log In as Admin
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('editor')}
-                disabled={isSubmitting}
-                className="px-3 py-2 bg-[#111522] hover:bg-[#272B3A] text-[#F8FAFC] font-semibold rounded-lg text-xs border border-[#272B3A] transition-colors cursor-pointer text-center disabled:opacity-50"
-              >
-                Log In as Editor
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleQuickAdminLogin}
+              disabled={isSubmitting}
+              className="w-full py-2.5 px-3 bg-[#8B5CF6] hover:bg-[#7c3aed] text-white font-semibold rounded-lg text-xs transition-colors cursor-pointer text-center disabled:opacity-50 shadow-md shadow-[#8B5CF6]/20"
+            >
+              Log In as Admin
+            </button>
           </div>
 
           {error && (
@@ -135,7 +125,7 @@ export default function AdminLoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-[#A1A1AA] mb-1.5">
-                Staff Email Address
+                Admin Email Address
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-[#A1A1AA] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -144,7 +134,7 @@ export default function AdminLoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@softgamer.dev or umerjamil126@gmail.com"
+                  placeholder="admin@softgamer.dev or umerjamil126@gmail.com"
                   className="w-full pl-9 pr-3 py-2.5 bg-[#090B12] border border-[#272B3A] rounded-xl text-xs sm:text-sm text-[#F8FAFC] placeholder-[#64748B] focus:outline-hidden focus:border-[#8B5CF6] transition-colors"
                 />
               </div>
