@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { Calendar, Clock, User, Tag } from 'lucide-react';
+import { Calendar, Clock, Tag } from 'lucide-react';
 import { getAllArticles, getArticleBySlug, getRelatedArticles } from '@/lib/articles';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { ArticleContent } from '@/components/articles/ArticleContent';
@@ -155,31 +155,18 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
           {article.excerpt}
         </p>
 
-        {/* Author & Timestamp Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 py-4 border-y border-[#272B3A]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#171C2B] border border-[#272B3A] flex items-center justify-center text-[#8B5CF6]">
-              <User className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-[#F8FAFC]">{article.author.name}</p>
-              <p className="text-xs text-[#A1A1AA]">{article.author.role}</p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-[#A1A1AA]">
-            <span className="inline-flex items-center gap-1.5">
-              <Calendar className="w-4 h-4 text-[#38BDF8]" />
-              Published: {formatDate(article.publishedAt)}
+        {/* Timestamp Bar — anonymous posts, no author byline */}
+        <div className="flex flex-wrap items-center gap-4 py-4 border-y border-[#272B3A] text-xs sm:text-sm text-[#A1A1AA]">
+          <span className="inline-flex items-center gap-1.5">
+            <Calendar className="w-4 h-4 text-[#38BDF8]" />
+            Published: {formatDate(article.publishedAt)}
+          </span>
+          {article.updatedAt && (
+            <span className="hidden sm:inline-block">
+              (Updated: {formatDate(article.updatedAt)})
             </span>
-            {article.updatedAt && (
-              <span className="hidden sm:inline-block">
-                (Updated: {formatDate(article.updatedAt)})
-              </span>
-            )}
-          </div>
+          )}
         </div>
-      </header>
 
       {/* Hero Featured Media */}
       <div className="relative aspect-video rounded-2xl overflow-hidden bg-[#111522] border border-[#272B3A] mb-8 shadow-xl">
