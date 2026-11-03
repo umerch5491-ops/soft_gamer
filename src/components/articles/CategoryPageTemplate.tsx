@@ -72,12 +72,18 @@ export async function CategoryPageTemplate({ slug }: CategoryPageTemplateProps) 
           )}
         </div>
       ) : (
-        <div className="p-12 text-center bg-[#111522] border border-[#272B3A] rounded-2xl text-[#A1A1AA]">
-          <p className="text-lg font-semibold text-[#F8FAFC] mb-2">No Articles In This Category Yet</p>
-          <p className="text-sm">Editorial coverage for this hub is scheduled for publication soon.</p>
+        <div className="p-12 text-center bg-[#111522] border border-[#272B3A] rounded-2xl">
+          <p className="text-2xl font-bold text-[#F8FAFC] mb-3">Coming Soon</p>
+          <p className="text-[#A1A1AA] mb-6">
+            We&apos;re working on bringing you great {categoryInfo.name} content. Check back soon!
+          </p>
+          <div className="flex flex-wrap justify-center gap-3">
+            <a href="/gaming-news" className="px-4 py-2 rounded-lg bg-[#171C2B] border border-[#272B3A] text-[#38BDF8] text-sm font-medium hover:border-[#38BDF8] transition-colors">Gaming News</a>
+            <a href="/game-guides" className="px-4 py-2 rounded-lg bg-[#171C2B] border border-[#272B3A] text-[#38BDF8] text-sm font-medium hover:border-[#38BDF8] transition-colors">Game Guides</a>
+            <a href="/reviews" className="px-4 py-2 rounded-lg bg-[#171C2B] border border-[#272B3A] text-[#38BDF8] text-sm font-medium hover:border-[#38BDF8] transition-colors">Reviews</a>
+          </div>
         </div>
       )}
     </div>
   );
 }
-

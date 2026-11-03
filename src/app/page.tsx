@@ -9,14 +9,13 @@ import { FeaturedArticle } from '@/components/home/FeaturedArticle';
 import { ArticleCard } from '@/components/articles/ArticleCard';
 import { TrendingArticles } from '@/components/home/TrendingArticles';
 import { CategoryCards } from '@/components/home/CategoryCards';
-import { NewsletterPlaceholder } from '@/components/home/NewsletterPlaceholder';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: 'Soft Gamer — Premium Dark Gaming Magazine & Analysis',
-  description: 'International gaming news, technical deep dives, PC performance benchmarks, console architectures, and tactical guides.',
+  title: 'Soft Gamer — Gaming News, Guides, Reviews & Hardware Insights',
+  description: 'Independent gaming news, game guides, PC hardware analysis, console coverage, and honest reviews.',
 };
 
 export default async function HomePage() {
@@ -40,33 +39,37 @@ export default async function HomePage() {
       {featured && <FeaturedArticle article={featured} />}
 
       {/* Section B & C: Latest Gaming News (Grid) + Trending Articles (Sidebar) */}
-      <section>
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Main 6 Article Grid */}
-          <div className="lg:col-span-8">
-            <SectionHeading
-              title="Latest Gaming Coverage"
-              subtitle="Analytical reporting, hardware updates, and editorial commentary"
-              badge="News & Analysis"
-              viewAllHref="/gaming-news"
-            />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {latestNews.map((article, idx) => (
-                <ArticleCard
-                  key={article.id}
-                  article={article}
-                  priority={idx < 2}
-                />
-              ))}
+      {latestNews.length > 0 && (
+        <section>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Main Article Grid */}
+            <div className={trending.length > 0 ? 'lg:col-span-8' : 'lg:col-span-12'}>
+              <SectionHeading
+                title="Latest Gaming Coverage"
+                subtitle="Analytical reporting, hardware updates, and editorial commentary"
+                badge="News & Analysis"
+                viewAllHref="/gaming-news"
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {latestNews.map((article, idx) => (
+                  <ArticleCard
+                    key={article.id}
+                    article={article}
+                    priority={idx < 2}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Section C: Trending Coverage Sidebar */}
-          <div className="lg:col-span-4 lg:sticky lg:top-24">
-            <TrendingArticles articles={trending} />
+            {/* Section C: Trending Coverage Sidebar */}
+            {trending.length > 0 && (
+              <div className="lg:col-span-4 lg:sticky lg:top-24">
+                <TrendingArticles articles={trending} />
+              </div>
+            )}
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Section D: Gaming Categories Showcase */}
       <section>
@@ -79,39 +82,38 @@ export default async function HomePage() {
       </section>
 
       {/* Section E: Latest Game Guides */}
-      <section>
-        <SectionHeading
-          title="Tactical Guides & Walkthroughs"
-          subtitle="In-depth progression strategies, optimization paths, and mechanical mastery"
-          badge="Guides"
-          viewAllHref="/game-guides"
-        />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {guides.map((article) => (
-            <ArticleCard key={article.id} article={article} />
-          ))}
-        </div>
-      </section>
+      {guides.length > 0 && (
+        <section>
+          <SectionHeading
+            title="Tactical Guides & Walkthroughs"
+            subtitle="In-depth progression strategies, optimization paths, and mechanical mastery"
+            badge="Guides"
+            viewAllHref="/game-guides"
+          />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {guides.map((article) => (
+              <ArticleCard key={article.id} article={article} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Section F: Reviews */}
-      <section>
-        <SectionHeading
-          title="Editorial Critiques & Reviews"
-          subtitle="Unbiased gameplay analysis, performance metrics, and level design evaluations"
-          badge="Reviews"
-          viewAllHref="/reviews"
-        />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {reviews.map((article) => (
-            <ArticleCard key={article.id} article={article} />
-          ))}
-        </div>
-      </section>
-
-      {/* Section G: Newsletter Placeholder */}
-      <section>
-        <NewsletterPlaceholder />
-      </section>
+      {reviews.length > 0 && (
+        <section>
+          <SectionHeading
+            title="Editorial Critiques & Reviews"
+            subtitle="Unbiased gameplay analysis, performance metrics, and level design evaluations"
+            badge="Reviews"
+            viewAllHref="/reviews"
+          />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {reviews.map((article) => (
+              <ArticleCard key={article.id} article={article} />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

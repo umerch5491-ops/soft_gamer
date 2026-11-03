@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 export default function DisclaimerPage() {
-  const contactEmail = 'umerjamil126@gmail.com';
+  const contactEmail = process.env.CONTACT_EMAIL || 'umerjamil126@gmail.com';
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -19,7 +19,7 @@ export default function DisclaimerPage() {
           Editorial &amp; Testing Disclaimer
         </h1>
         <p className="text-sm text-[#A1A1AA]">
-          Last Updated: November 2026
+          Last Updated: November 3, 2026
         </p>
       </header>
 
@@ -28,7 +28,7 @@ export default function DisclaimerPage() {
         <section>
           <h2 className="text-2xl font-bold text-[#F8FAFC] mb-3">1. General Information</h2>
           <p>
-            The information provided by <strong className="text-[#F8FAFC]">Soft Gamer</strong> on softgamer.dev is for general educational, analytical, and entertainment purposes only. While we make every effort to maintain accurate and up-to-date information, Soft Gamer makes no representations or warranties of any kind, express or implied, about the completeness, accuracy, reliability, or suitability of the information contained on this website.
+            The information provided by <strong className="text-[#F8FAFC]">Soft Gamer</strong> on www.softgamer.online is for general educational, analytical, and entertainment purposes only. While we make every effort to maintain accurate and up-to-date information, Soft Gamer makes no representations or warranties of any kind, express or implied, about the completeness, accuracy, reliability, or suitability of the information contained on this website.
           </p>
         </section>
 
@@ -107,6 +107,7 @@ export default function DisclaimerPage() {
                 {contactEmail}
               </a>
             </p>
+            <p className="text-xs text-[#A1A1AA]">Website: www.softgamer.online</p>
           </div>
         </section>
       </div>

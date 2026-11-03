@@ -182,9 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // 2. Validate against Admin credentials
     const isEmailMatched =
       cleanEmail === configuredAdminEmail ||
-      cleanEmail === 'umerch5491@gmail.com' ||
-      cleanEmail === 'umerjamil126@gmail.com' ||
-      cleanEmail === 'admin@softgamer.dev';
+      cleanEmail === 'umerch5491@gmail.com';
 
     const isPasswordMatched =
       cleanPassword === configuredAdminPassword ||
@@ -194,7 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const adminUser: AdminUser = {
         id: 'usr-admin-' + Date.now(),
         email: cleanEmail,
-        name: cleanEmail.includes('umer') ? 'Umer' : 'Administrator',
+        name: 'Admin',
         role: 'admin',
       };
 

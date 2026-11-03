@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next';
-import { getAllArticles } from '@/lib/articles';
+import { getAllArticles, getAllAuthors } from '@/lib/articles';
 import { SITE_CONFIG } from '@/lib/constants';
 
 export const revalidate = 3600;
@@ -21,8 +21,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ? new Date(publishedArticles[0].updatedAt || publishedArticles[0].publishedAt)
     : new Date();
 
-  // Stable revision date for legal and company static pages
-  const legalPagesDate = new Date('2026-01-15T00:00:00.000Z');
+  // Stable revision date for legal and company static pages (updated Nov 2026)
+  const legalPagesDate = new Date('2026-11-03T00:00:00.000Z');
 
   // Core static & category routes (Strictly excludes /admin, /search, and /api)
   const staticRoutes: MetadataRoute.Sitemap = [
@@ -108,6 +108,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: article.featured ? 0.9 : 0.75,
   }));
 
-  return [...staticRoutes, ...articleRoutes];
-}
+  // Author profile routes
+  const authors = await getAllAuthors();
+  const authorRoutes: MetadataRoute.Sitemap = authors.map((auth) => ({
+    url: `${baseUrl}/author/${auth.slug || 'umer-jamil'}`,
+    lastModified: latestArticleDate,
+    changeFrequency: 'weekly',
+    priority: 0.6,
+  }));
 
+  return [...staticRoutes, ...articleRoutes, ...authorRoutes];
+}

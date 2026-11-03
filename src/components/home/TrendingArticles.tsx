@@ -7,6 +7,10 @@ interface TrendingArticlesProps {
 }
 
 export function TrendingArticles({ articles }: TrendingArticlesProps) {
+  if (!articles || articles.length === 0) {
+    return null;
+  }
+
   return (
     <div className="bg-[#111522] border border-[#272B3A] rounded-2xl p-6">
       <div className="flex items-center gap-2 mb-6 pb-4 border-b border-[#272B3A]">
@@ -17,6 +21,8 @@ export function TrendingArticles({ articles }: TrendingArticlesProps) {
       <div className="divide-y divide-[#272B3A]">
         {articles.map((article, index) => {
           const rank = index + 1;
+          const authorSlug = article.author?.slug || 'umer-jamil';
+
           return (
             <div key={article.id} className="py-4 first:pt-0 last:pb-0 flex items-start gap-4 group">
               <span className="font-extrabold text-2xl text-[#272B3A] group-hover:text-[#8B5CF6] transition-colors shrink-0 w-8">
@@ -37,7 +43,12 @@ export function TrendingArticles({ articles }: TrendingArticlesProps) {
                     {article.readTime}
                   </span>
                   <span>•</span>
-                  <span>By {article.author.name}</span>
+                  <Link
+                    href={`/author/${authorSlug}`}
+                    className="hover:text-[#38BDF8] transition-colors"
+                  >
+                    By {article.author.name}
+                  </Link>
                 </div>
               </div>
             </div>
@@ -47,4 +58,3 @@ export function TrendingArticles({ articles }: TrendingArticlesProps) {
     </div>
   );
 }
-

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default function AboutPage() {
-  const contactEmail = 'umerjamil126@gmail.com';
+  const contactEmail = process.env.CONTACT_EMAIL || 'umerjamil126@gmail.com';
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -100,10 +100,25 @@ export default function AboutPage() {
                 <strong className="text-[#F8FAFC]">Corrections:</strong> We value accuracy. If a factual error occurs, we correct it promptly with a clear amendment note.
               </li>
               <li>
-                <strong className="text-[#F8FAFC]">No Fabricated Claims:</strong> Every benchmark, configuration guide, and game tip is tested and validated before publication.
+                <strong className="text-[#F8FAFC]">No Fabricated Claims:</strong> Our content is thoroughly researched and fact-checked before publication.
               </li>
             </ul>
           </div>
+        </section>
+
+        {/* Who Runs This Site */}
+        <section>
+          <h2 className="text-2xl font-bold text-[#F8FAFC] mb-4">Who Runs This Site</h2>
+          <p>
+            Soft Gamer is an independent gaming publication run by passionate gamers and technology writers.
+            We cover the games, hardware, and platforms we genuinely care about — without brand deals or sponsored editorial bias.
+          </p>
+          <p className="mt-3">
+            For questions, corrections, or press inquiries, reach us at{' '}
+            <a href={`mailto:${contactEmail}`} className="text-[#38BDF8] hover:underline font-mono">
+              {contactEmail}
+            </a>.
+          </p>
         </section>
 
         {/* Get in Touch Banner */}

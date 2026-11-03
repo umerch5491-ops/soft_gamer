@@ -10,13 +10,19 @@ interface ArticleCardProps {
 }
 
 export function ArticleCard({ article, priority = false }: ArticleCardProps) {
+  const imageAlt = (article.imageAlt && !/^\d+[\s_-]\d+/.test(article.imageAlt))
+    ? article.imageAlt
+    : `${article.title} — Soft Gamer`;
+
+  const authorSlug = article.author.slug || 'umer-jamil';
+
   return (
     <article className="group bg-[#171C2B] border border-[#272B3A] rounded-xl overflow-hidden hover:border-[#8B5CF6]/50 transition-all duration-300 flex flex-col h-full hover:shadow-[0_4px_20px_rgba(139,92,246,0.12)]">
       {/* Featured Thumbnail */}
       <Link href={`/articles/${article.slug}`} className="relative block aspect-video overflow-hidden bg-[#111522]">
         <Image
           src={article.featuredImage}
-          alt={article.imageAlt}
+          alt={imageAlt}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           priority={priority}
@@ -58,10 +64,13 @@ export function ArticleCard({ article, priority = false }: ArticleCardProps) {
 
         {/* Author Footer */}
         <div className="pt-3 border-t border-[#272B3A] flex items-center justify-between text-xs text-[#A1A1AA]">
-          <span className="inline-flex items-center gap-1.5 font-medium text-[#F8FAFC]">
+          <Link
+            href={`/author/${authorSlug}`}
+            className="inline-flex items-center gap-1.5 font-medium text-[#F8FAFC] hover:text-[#38BDF8] transition-colors"
+          >
             <User className="w-3.5 h-3.5 text-[#8B5CF6]" />
             {article.author.name}
-          </span>
+          </Link>
           <Link
             href={`/articles/${article.slug}`}
             className="text-[#38BDF8] hover:text-[#8B5CF6] font-semibold transition-colors flex items-center gap-1"
@@ -73,4 +82,3 @@ export function ArticleCard({ article, priority = false }: ArticleCardProps) {
     </article>
   );
 }
-

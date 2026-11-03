@@ -18,6 +18,7 @@ export interface Author {
   role: string;
   avatar?: string;
   bio?: string;
+  slug?: string;
 }
 
 export interface Article {
@@ -41,4 +42,5 @@ export interface Article {
   seoTitle?: string;
   metaDescription?: string;
   editorialChecklist?: Record<string, boolean>;
+  sources?: string[];
 }

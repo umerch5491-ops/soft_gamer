@@ -3,6 +3,7 @@ import { Inter, Orbitron } from 'next/font/google';
 import './globals.css';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { CookieConsent } from '@/components/ui/CookieConsent';
 import { SITE_CONFIG } from '@/lib/constants';
 import { generateWebSiteSchema, generateOrganizationSchema } from '@/lib/seo/structuredData';
 
@@ -104,11 +105,20 @@ export default function RootLayout({
             __html: JSON.stringify(organizationSchema),
           }}
         />
+        {/* Google AdSense verification — only rendered when publisher ID is configured */}
+        {process.env.NEXT_PUBLIC_ADSENSE_CLIENT && (
+          <script
+            async
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT}`}
+            crossOrigin="anonymous"
+          />
+        )}
       </head>
       <body className="flex flex-col min-h-screen bg-[#090B12] text-[#F8FAFC]">
         <Header />
         <main className="flex-grow">{children}</main>
         <Footer />
+        <CookieConsent />
       </body>
     </html>
   );

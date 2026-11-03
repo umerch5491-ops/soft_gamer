@@ -3,31 +3,14 @@ import { SITE_CONFIG } from '@/lib/constants';
 
 export default function robots(): MetadataRoute.Robots {
   const baseUrl = SITE_CONFIG.url;
-
   return {
     rules: [
       {
         userAgent: '*',
         allow: '/',
-        disallow: [
-          '/admin',
-          '/admin/',
-          '/search',
-          '/api/',
-        ],
-      },
-      {
-        userAgent: 'Googlebot',
-        allow: '/',
-        disallow: [
-          '/admin',
-          '/admin/',
-          '/search',
-          '/api/',
-        ],
+        disallow: ['/admin/', '/api/'],
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,
   };
 }
-

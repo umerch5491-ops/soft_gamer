@@ -1,8 +1,8 @@
-import { Article, CategorySlug } from '@/types/article';
+import { Article, CategorySlug, Author } from '@/types/article';
 import { SAMPLE_ARTICLES } from '@/data/sampleArticles';
 import { CATEGORIES } from '@/data/categories';
 import { getSupabaseClient } from '@/lib/supabase';
-import { DbArticle } from '@/types/database';
+import { DbArticle, DbAuthor } from '@/types/database';
 
 /**
  * Calculates human-readable read time from word count
@@ -13,6 +13,49 @@ function calculateReadTime(content: string): string {
   return `${minutes} min read`;
 }
 
+function formatAuthor(dbAuthor?: DbAuthor | null): Author {
+  const rawName = dbAuthor?.name?.trim() || '';
+  if (!rawName || rawName.toLowerCase() === 'umerch5491' || rawName.toLowerCase().includes('umerch5491')) {
+    return {
+      name: 'Umer Jamil',
+      role: 'Editor-in-Chief',
+      bio: 'Lifelong gamer and tech enthusiast covering hardware benchmarks, gaming news, and competitive guides for Soft Gamer.',
+      avatar: dbAuthor?.avatar,
+      slug: 'umer-jamil',
+    };
+  }
+  const slug = dbAuthor?.slug || rawName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  return {
+    name: rawName,
+    role: dbAuthor?.bio || 'Staff Writer',
+    bio: dbAuthor?.bio || 'Gaming journalist and editorial contributor at Soft Gamer.',
+    avatar: dbAuthor?.avatar,
+    slug: slug || 'editorial-staff',
+  };
+}
+
+function normalizeArticle(art: Article): Article {
+  const authorName = art.author?.name?.trim() || 'Soft Gamer Editorial Staff';
+  const isUmer = authorName.toLowerCase().includes('umerch5491') || authorName.toLowerCase() === 'umerch5491';
+  const cleanName = isUmer ? 'Umer Jamil' : authorName;
+  const slug = art.author?.slug || (isUmer ? 'umer-jamil' : cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'editorial-staff');
+  const role = isUmer ? 'Editor-in-Chief' : (art.author?.role || 'Staff Writer');
+  const bio = art.author?.bio || (isUmer
+    ? 'Lifelong gamer and tech enthusiast covering hardware benchmarks, gaming news, and competitive guides for Soft Gamer.'
+    : 'Gaming journalist and editorial contributor at Soft Gamer.');
+
+  return {
+    ...art,
+    author: {
+      ...art.author,
+      name: cleanName,
+      role,
+      bio,
+      slug,
+    },
+  };
+}
+
 /**
  * Maps a relational database row from Supabase into the application's Article model
  */
@@ -20,7 +63,7 @@ function mapDbArticleToArticle(row: DbArticle): Article {
   const categorySlug = (row.category?.slug as CategorySlug) || 'gaming-news';
   const categoryMeta = CATEGORIES[categorySlug];
 
-  return {
+  return normalizeArticle({
     id: row.id,
     title: row.title,
     slug: row.slug,
@@ -28,11 +71,7 @@ function mapDbArticleToArticle(row: DbArticle): Article {
     content: row.content,
     category: categorySlug,
     categoryName: row.category?.name || categoryMeta?.name || 'Gaming News',
-    author: {
-      name: row.author?.name || 'Soft Gamer Editorial Staff',
-      role: row.author?.bio || 'Staff Writer',
-      avatar: row.author?.avatar,
-    },
+    author: formatAuthor(row.author),
     featuredImage: row.featured_image,
     imageAlt: row.image_alt,
     publishedAt: row.published_at,
@@ -43,7 +82,7 @@ function mapDbArticleToArticle(row: DbArticle): Article {
     readTime: calculateReadTime(row.content),
     seoTitle: row.seo_title || undefined,
     metaDescription: row.meta_description || undefined,
-  };
+  });
 }
 
 /**
@@ -84,7 +123,7 @@ export async function getAllArticles(): Promise<Article[]> {
   }
 
   // Fallback for development before Supabase project is connected
-  return [...SAMPLE_ARTICLES].sort(
+  return [...SAMPLE_ARTICLES].map(normalizeArticle).sort(
     (a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
   );
 }
@@ -167,16 +206,39 @@ export async function getLatestArticles(limit: number = 6): Promise<Article[]> {
 }
 
 export async function getTrendingArticles(limit: number = 5): Promise<Article[]> {
-  const all = await getAllArticles();
-  // If trending rank is specified on articles, respect it; otherwise sort by latest
-  return all
-    .filter((art) => art.status === 'published')
-    .sort((a, b) => {
-      if (typeof a.trendingRank === 'number' && typeof b.trendingRank === 'number') {
-        return a.trendingRank - b.trendingRank;
+  const supabase = getSupabaseClient();
+
+  if (supabase) {
+    try {
+      const now = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('articles')
+        .select(`
+          *,
+          category:categories(*),
+          author:authors(*)
+        `)
+        .eq('status', 'published')
+        .lte('published_at', now)
+        .order('published_at', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        console.error('[Supabase DAL Error in getTrendingArticles]:', error.message);
+        return [];
       }
-      return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
-    })
+
+      return (data as unknown as DbArticle[]).map(mapDbArticleToArticle);
+    } catch (err) {
+      console.error('[Supabase Network Error in getTrendingArticles]:', err);
+      return [];
+    }
+  }
+
+  const all = await getAllArticles();
+  return all
+    .filter((art) => art.trendingRank !== undefined)
+    .sort((a, b) => (a.trendingRank ?? 99) - (b.trendingRank ?? 99))
     .slice(0, limit);
 }
 
@@ -198,7 +260,7 @@ export async function getArticlesByCategory(category: CategorySlug, limit?: numb
         .lte('published_at', now)
         .order('published_at', { ascending: false });
 
-      if (typeof limit === 'number') {
+      if (limit) {
         query = query.limit(limit);
       }
 
@@ -253,9 +315,8 @@ export async function getArticleBySlug(slug: string): Promise<Article | undefine
     }
   }
 
-  return SAMPLE_ARTICLES.find(
-    (art) => art.slug.toLowerCase() === decodedSlug && art.status === 'published'
-  );
+  const all = await getAllArticles();
+  return all.find((art) => art.slug.toLowerCase() === decodedSlug);
 }
 
 export async function getRelatedArticles(currentSlug: string, category: CategorySlug, limit: number = 3): Promise<Article[]> {
@@ -273,6 +334,55 @@ export async function getRelatedArticles(currentSlug: string, category: Category
   return [...filtered, ...additional].slice(0, limit);
 }
 
+export async function getAdjacentArticles(currentSlug: string): Promise<{ prev?: Article; next?: Article }> {
+  const all = await getAllArticles();
+  const index = all.findIndex((art) => art.slug === currentSlug);
+  if (index === -1) return {};
+  return {
+    next: index > 0 ? all[index - 1] : undefined, // newer
+    prev: index < all.length - 1 ? all[index + 1] : undefined, // older
+  };
+}
+
+export async function getAuthorBySlug(slug: string): Promise<Author | null> {
+  const all = await getAllArticles();
+  const match = all.find((art) => art.author.slug === slug);
+  if (match) return match.author;
+  if (slug === 'umer-jamil') {
+    return {
+      name: 'Umer Jamil',
+      role: 'Editor-in-Chief',
+      bio: 'Lifelong gamer and tech enthusiast covering hardware benchmarks, gaming news, and competitive guides for Soft Gamer.',
+      slug: 'umer-jamil',
+    };
+  }
+  return null;
+}
+
+export async function getArticlesByAuthor(authorSlug: string): Promise<Article[]> {
+  const all = await getAllArticles();
+  return all.filter((art) => art.author.slug === authorSlug);
+}
+
+export async function getAllAuthors(): Promise<Author[]> {
+  const all = await getAllArticles();
+  const authorsMap = new Map<string, Author>();
+  for (const art of all) {
+    if (art.author?.slug && !authorsMap.has(art.author.slug)) {
+      authorsMap.set(art.author.slug, art.author);
+    }
+  }
+  if (!authorsMap.has('umer-jamil')) {
+    authorsMap.set('umer-jamil', {
+      name: 'Umer Jamil',
+      role: 'Editor-in-Chief',
+      bio: 'Lifelong gamer and tech enthusiast covering hardware benchmarks, gaming news, and competitive guides for Soft Gamer.',
+      slug: 'umer-jamil',
+    });
+  }
+  return Array.from(authorsMap.values());
+}
+
 export async function searchArticles(query: string): Promise<Article[]> {
   const cleanQuery = query.toLowerCase().trim();
   if (!cleanQuery) return [];
@@ -282,7 +392,6 @@ export async function searchArticles(query: string): Promise<Article[]> {
   if (supabase) {
     try {
       const now = new Date().toISOString();
-      // Safe ilike filter matching title or excerpt
       const { data, error } = await supabase
         .from('articles')
         .select(`

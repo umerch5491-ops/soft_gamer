@@ -30,10 +30,6 @@ export function Footer() {
             <p className="text-sm text-[#A1A1AA] leading-relaxed max-w-sm">
               {SITE_CONFIG.editorialDescription}
             </p>
-            <div className="text-xs text-[#A1A1AA]/80 pt-2">
-              <p>Built with Next.js App Router &amp; TypeScript.</p>
-              <p className="mt-1">Architected for scalable organic editorial delivery.</p>
-            </div>
           </div>
 
           {/* Editorial Hubs */}
@@ -86,4 +82,3 @@ export function Footer() {
     </footer>
   );
 }
-

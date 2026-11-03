@@ -1,26 +1,32 @@
 /**
  * Site-wide configuration and SEO constants
+ * Single source of truth — all URLs derive from NEXT_PUBLIC_SITE_URL
  */
 
 const rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-const normalizedSiteUrl = rawSiteUrl && rawSiteUrl.length > 0 && !rawSiteUrl.includes('localhost')
-  ? rawSiteUrl.replace(/\/+$/, '')
-  : (process.env.NODE_ENV === 'production' ? 'https://softgamer.dev' : 'http://localhost:3000');
+const normalizedSiteUrl =
+  rawSiteUrl && rawSiteUrl.length > 0 && !rawSiteUrl.includes('localhost')
+    ? rawSiteUrl.replace(/\/+$/, '')
+    : process.env.NODE_ENV === 'production'
+    ? 'https://www.softgamer.online'
+    : 'http://localhost:3000';
 
 export const SITE_CONFIG = {
   name: 'Soft Gamer',
-  title: 'Soft Gamer — Premium Gaming News, Guides, Reviews & Tech Analysis',
-  description: 'In-depth gaming news, PC hardware analysis, console breakthroughs, game guides, and editorial reviews for passionate gamers worldwide.',
+  title: 'Soft Gamer — Gaming News, Guides & Reviews',
+  description:
+    'In-depth gaming news, game guides, mobile gaming coverage, and honest reviews for gamers worldwide.',
   url: normalizedSiteUrl,
-  canonicalDomain: 'softgamer.dev',
+  canonicalDomain: 'www.softgamer.online',
   publisher: {
     name: 'Soft Gamer Editorial',
     legalName: 'Soft Gamer Publishing',
     logo: '/images/og-default.svg',
-    email: 'umerjamil126@gmail.com',
-    contactEmail: 'umerjamil126@gmail.com',
+    email: process.env.CONTACT_EMAIL || 'umerjamil126@gmail.com',
+    contactEmail: process.env.CONTACT_EMAIL || 'umerjamil126@gmail.com',
   },
-  editorialDescription: 'Soft Gamer is an independent gaming publication dedicated to delivering high-signal editorial commentary, system architecture deep-dives, competitive gameplay guides, and unbiased reviews.',
+  editorialDescription:
+    'Soft Gamer is an independent gaming publication covering the latest news, in-depth guides, and honest reviews across PC, console, and mobile gaming.',
   copyrightNotice: `© ${new Date().getFullYear()} Soft Gamer. All rights reserved.`,
   navLinks: [
     { label: 'Home', href: '/' },

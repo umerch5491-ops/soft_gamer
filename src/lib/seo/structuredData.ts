@@ -90,6 +90,7 @@ export function generateBreadcrumbSchema(items: BreadcrumbItem[]) {
 export function generateArticleSchema(article: Article) {
   const articleUrl = getCanonicalUrl(`/articles/${article.slug}`);
   const featuredImageUrl = getAbsoluteImageUrl(article.featuredImage);
+  const authorUrl = getCanonicalUrl(`/author/${article.author.slug || 'umer-jamil'}`);
 
   return {
     '@context': 'https://schema.org',
@@ -112,6 +113,7 @@ export function generateArticleSchema(article: Article) {
         '@type': 'Person',
         name: article.author.name,
         jobTitle: article.author.role,
+        url: authorUrl,
         image: article.author.avatar ? getAbsoluteImageUrl(article.author.avatar) : undefined,
       },
     ],
@@ -129,4 +131,3 @@ export function generateArticleSchema(article: Article) {
     keywords: article.tags?.join(', '),
   };
 }
-

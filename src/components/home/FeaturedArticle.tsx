@@ -9,6 +9,12 @@ interface FeaturedArticleProps {
 }
 
 export function FeaturedArticle({ article }: FeaturedArticleProps) {
+  const imageAlt = (article.imageAlt && !/^\d+[\s_-]\d+/.test(article.imageAlt))
+    ? article.imageAlt
+    : `${article.title} — Soft Gamer`;
+
+  const authorSlug = article.author.slug || 'umer-jamil';
+
   return (
     <section className="relative rounded-2xl overflow-hidden bg-[#111522] border border-[#272B3A] p-4 sm:p-6 lg:p-8 hover:border-[#8B5CF6]/50 transition-all duration-300">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
@@ -16,7 +22,7 @@ export function FeaturedArticle({ article }: FeaturedArticleProps) {
         <div className="lg:col-span-7 relative aspect-video rounded-xl overflow-hidden bg-[#090B12]">
           <Image
             src={article.featuredImage}
-            alt={article.imageAlt}
+            alt={imageAlt}
             fill
             priority
             sizes="(max-width: 1024px) 100vw, 60vw"
@@ -32,9 +38,12 @@ export function FeaturedArticle({ article }: FeaturedArticleProps) {
         {/* Content Details */}
         <div className="lg:col-span-5 flex flex-col justify-center">
           <div className="flex items-center gap-3 text-xs text-[#A1A1AA] mb-3">
-            <span className="px-2.5 py-0.5 rounded bg-[#171C2B] text-[#38BDF8] border border-[#272B3A] font-medium">
+            <Link
+              href={`/${article.category}`}
+              className="px-2.5 py-0.5 rounded bg-[#171C2B] text-[#38BDF8] border border-[#272B3A] font-medium hover:border-[#38BDF8] transition-colors"
+            >
               {article.categoryName}
-            </span>
+            </Link>
             <span>•</span>
             <span className="inline-flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5 text-[#38BDF8]" />
@@ -58,15 +67,20 @@ export function FeaturedArticle({ article }: FeaturedArticleProps) {
           </p>
 
           <div className="flex items-center justify-between pt-4 border-t border-[#272B3A]">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-[#171C2B] border border-[#272B3A] flex items-center justify-center text-[#8B5CF6]">
+            <Link
+              href={`/author/${authorSlug}`}
+              className="group flex items-center gap-2"
+            >
+              <div className="w-8 h-8 rounded-full bg-[#171C2B] border border-[#272B3A] group-hover:border-[#8B5CF6] flex items-center justify-center text-[#8B5CF6] transition-colors">
                 <User className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-xs sm:text-sm font-semibold text-[#F8FAFC]">{article.author.name}</p>
+                <p className="text-xs sm:text-sm font-semibold text-[#F8FAFC] group-hover:text-[#38BDF8] transition-colors">
+                  {article.author.name}
+                </p>
                 <p className="text-[11px] text-[#A1A1AA]">{article.author.role}</p>
               </div>
-            </div>
+            </Link>
 
             <Link
               href={`/articles/${article.slug}`}
@@ -81,4 +95,3 @@ export function FeaturedArticle({ article }: FeaturedArticleProps) {
     </section>
   );
 }
-
