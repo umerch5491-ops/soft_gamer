@@ -3,6 +3,7 @@ import { CategoryPageTemplate } from '@/components/articles/CategoryPageTemplate
 import { CATEGORIES } from '@/data/categories';
 import { getCanonicalUrl } from '@/lib/constants';
 import { getArticlesByCategory } from '@/lib/articles';
+import { SITE_URL } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -13,14 +14,14 @@ const canonical = getCanonicalUrl('/game-guides');
 export async function generateMetadata(): Promise<Metadata> {
   const articles = await getArticlesByCategory('game-guides');
   return {
-    metadataBase: new URL('https://www.softgamer.online'),
+    metadataBase: new URL(SITE_URL),
     title: 'Game Guides — Tactical Walkthroughs & Progression Strategies',
     description: category.description,
     alternates: {
       canonical,
     },
     robots: {
-      index: articles.length >= 3,
+      index: articles.length > 0,
       follow: true,
     },
     openGraph: {

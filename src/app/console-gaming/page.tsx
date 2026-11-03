@@ -3,6 +3,7 @@ import { CategoryPageTemplate } from '@/components/articles/CategoryPageTemplate
 import { CATEGORIES } from '@/data/categories';
 import { getCanonicalUrl } from '@/lib/constants';
 import { getArticlesByCategory } from '@/lib/articles';
+import { SITE_URL } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -13,14 +14,14 @@ const canonical = getCanonicalUrl('/console-gaming');
 export async function generateMetadata(): Promise<Metadata> {
   const articles = await getArticlesByCategory('console-gaming');
   return {
-    metadataBase: new URL('https://www.softgamer.online'),
+    metadataBase: new URL(SITE_URL),
     title: 'Console Gaming — PlayStation, Xbox & Switch Coverage',
     description: category.description,
     alternates: {
       canonical,
     },
     robots: {
-      index: articles.length >= 3,
+      index: articles.length > 0,
       follow: true,
     },
     openGraph: {
