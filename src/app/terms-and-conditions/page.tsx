@@ -1,9 +1,20 @@
 import { Metadata } from 'next';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
+import { SITE_URL } from '@/lib/site';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: 'Terms & Conditions — Soft Gamer',
   description: 'Terms and conditions governing the use of Soft Gamer editorial content, technical walkthroughs, and reader services.',
+  alternates: {
+    canonical: '/terms-and-conditions',
+  },
+  openGraph: {
+    title: 'Terms & Conditions — Soft Gamer',
+    description: 'Terms and conditions governing the use of Soft Gamer editorial content, technical walkthroughs, and reader services.',
+    url: `${SITE_URL}/terms-and-conditions`,
+    type: 'website',
+  },
 };
 
 export default function TermsAndConditionsPage() {

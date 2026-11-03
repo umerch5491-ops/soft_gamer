@@ -10,6 +10,18 @@ const nextConfig: NextConfig = {
         destination: 'https://www.softgamer.online/:path*',
         permanent: true,
       },
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'softgamer.dev' }],
+        destination: 'https://www.softgamer.online/:path*',
+        permanent: true,
+      },
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www.softgamer.dev' }],
+        destination: 'https://www.softgamer.online/:path*',
+        permanent: true,
+      },
     ];
   },
   images: {

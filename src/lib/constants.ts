@@ -1,27 +1,21 @@
+import { SITE_URL } from '@/lib/site';
+
 /**
  * Site-wide configuration and SEO constants
- * Single source of truth — all URLs derive from NEXT_PUBLIC_SITE_URL
+ * Single source of truth — all URLs derive from SITE_URL in lib/site.ts
  */
-
-const rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-const normalizedSiteUrl =
-  rawSiteUrl && rawSiteUrl.length > 0 && !rawSiteUrl.includes('localhost')
-    ? rawSiteUrl.replace(/\/+$/, '')
-    : process.env.NODE_ENV === 'production'
-    ? 'https://www.softgamer.online'
-    : 'http://localhost:3000';
 
 export const SITE_CONFIG = {
   name: 'Soft Gamer',
   title: 'Soft Gamer — Gaming News, Guides & Reviews',
   description:
     'In-depth gaming news, game guides, mobile gaming coverage, and honest reviews for gamers worldwide.',
-  url: normalizedSiteUrl,
+  url: SITE_URL,
   canonicalDomain: 'www.softgamer.online',
   publisher: {
     name: 'Soft Gamer Editorial',
     legalName: 'Soft Gamer Publishing',
-    logo: '/images/og-default.svg',
+    logo: '/images/og-default.png',
     email: process.env.CONTACT_EMAIL || 'umerjamil126@gmail.com',
     contactEmail: process.env.CONTACT_EMAIL || 'umerjamil126@gmail.com',
   },
@@ -54,19 +48,19 @@ export function getCanonicalUrl(path: string = ''): string {
     return path;
   }
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
-  return `${SITE_CONFIG.url}${cleanPath}`;
+  return `${SITE_URL}${cleanPath}`;
 }
 
 /**
- * Ensures image URLs are resolved to absolute paths for OpenGraph and Structured Data
+ * Ensures image URLs are resolved to absolute URLs for OpenGraph and Structured Data
  */
 export function getAbsoluteImageUrl(imageUrl: string): string {
-  if (!imageUrl) return `${SITE_CONFIG.url}/images/og-default.svg`;
+  if (!imageUrl) return `${SITE_URL}/images/og-default.png`;
   if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
     return imageUrl;
   }
   const cleanPath = imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`;
-  return `${SITE_CONFIG.url}${cleanPath}`;
+  return `${SITE_URL}${cleanPath}`;
 }
 
 export function formatDate(dateString: string): string {

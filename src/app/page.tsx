@@ -10,13 +10,14 @@ import { ArticleCard } from '@/components/articles/ArticleCard';
 import { TrendingArticles } from '@/components/home/TrendingArticles';
 import { CategoryCards } from '@/components/home/CategoryCards';
 import { SectionHeading } from '@/components/ui/SectionHeading';
+import { SITE_URL } from '@/lib/site';
 
 // Force dynamic rendering on every request to prevent stale build-time ISR caches
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://www.softgamer.online'),
+  metadataBase: new URL(SITE_URL),
   title: 'Soft Gamer — Gaming News, Guides, Reviews & Hardware Insights',
   description: 'Independent gaming news, game guides, PC hardware analysis, console coverage, and honest reviews.',
   alternates: {
@@ -25,12 +26,12 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Soft Gamer — Gaming News, Guides, Reviews & Hardware Insights',
     description: 'Independent gaming news, game guides, PC hardware analysis, console coverage, and honest reviews.',
-    url: 'https://www.softgamer.online',
+    url: SITE_URL,
     type: 'website',
     siteName: 'Soft Gamer',
     images: [
       {
-        url: '/images/og-default.svg',
+        url: `${SITE_URL}/images/og-default.png`,
         width: 1200,
         height: 630,
         alt: 'Soft Gamer — Gaming News, Guides, Reviews & Hardware Insights',
@@ -41,7 +42,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Soft Gamer — Gaming News, Guides, Reviews & Hardware Insights',
     description: 'Independent gaming news, game guides, PC hardware analysis, console coverage, and honest reviews.',
-    images: ['/images/og-default.svg'],
+    images: [`${SITE_URL}/images/og-default.png`],
   },
 };
 

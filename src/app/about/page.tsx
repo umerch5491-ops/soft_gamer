@@ -2,10 +2,21 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { Cpu, Gamepad2, Compass, ShieldCheck, Mail, ArrowRight } from 'lucide-react';
+import { SITE_URL } from '@/lib/site';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: 'About Us — Soft Gamer Editorial & Mission',
   description: 'Learn about Soft Gamer, our editorial mission, testing standards, and commitment to independent, technical gaming journalism.',
+  alternates: {
+    canonical: '/about',
+  },
+  openGraph: {
+    title: 'About Us — Soft Gamer Editorial & Mission',
+    description: 'Learn about Soft Gamer, our editorial mission, testing standards, and commitment to independent, technical gaming journalism.',
+    url: `${SITE_URL}/about`,
+    type: 'website',
+  },
 };
 
 export default function AboutPage() {

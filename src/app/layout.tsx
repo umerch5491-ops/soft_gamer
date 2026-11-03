@@ -5,6 +5,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { CookieConsent } from '@/components/ui/CookieConsent';
 import { SITE_CONFIG } from '@/lib/constants';
+import { SITE_URL } from '@/lib/site';
 import { generateWebSiteSchema, generateOrganizationSchema } from '@/lib/seo/structuredData';
 
 const inter = Inter({
@@ -20,7 +21,7 @@ const orbitron = Orbitron({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(SITE_CONFIG.url),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: SITE_CONFIG.title,
     template: `%s | ${SITE_CONFIG.name}`,
@@ -56,13 +57,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: SITE_CONFIG.url,
-    siteName: SITE_CONFIG.name,
+    url: SITE_URL,
+    siteName: 'Soft Gamer',
     title: SITE_CONFIG.title,
     description: SITE_CONFIG.description,
     images: [
       {
-        url: '/images/og-default.svg',
+        url: `${SITE_URL}/images/og-default.png`,
         width: 1200,
         height: 630,
         alt: 'Soft Gamer — Premium Gaming News and Editorial Magazine',
@@ -73,10 +74,10 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: SITE_CONFIG.title,
     description: SITE_CONFIG.description,
-    images: ['/images/og-default.svg'],
+    images: [`${SITE_URL}/images/og-default.png`],
   },
   alternates: {
-    canonical: SITE_CONFIG.url,
+    canonical: '/',
   },
 };
 

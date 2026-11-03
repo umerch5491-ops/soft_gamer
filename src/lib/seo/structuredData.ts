@@ -1,9 +1,10 @@
 import { SITE_CONFIG, getCanonicalUrl, getAbsoluteImageUrl } from '@/lib/constants';
+import { SITE_URL } from '@/lib/site';
 import { Article } from '@/types/article';
 
 /**
  * Structured Data (Schema.org JSON-LD) Generator for Soft Gamer
- * Ensures 100% compliant, validated JSON-LD markup without fabricated claims.
+ * Uses single source of truth SITE_URL for all absolute entity IDs and URLs.
  */
 
 export interface BreadcrumbItem {
@@ -15,18 +16,18 @@ export function generateWebSiteSchema() {
   return {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    '@id': `${SITE_CONFIG.url}/#website`,
+    '@id': `${SITE_URL}/#website`,
     name: SITE_CONFIG.name,
-    url: SITE_CONFIG.url,
+    url: SITE_URL,
     description: SITE_CONFIG.description,
     publisher: {
-      '@id': `${SITE_CONFIG.url}/#organization`,
+      '@id': `${SITE_URL}/#organization`,
     },
     potentialAction: {
       '@type': 'SearchAction',
       target: {
         '@type': 'EntryPoint',
-        urlTemplate: `${SITE_CONFIG.url}/search?q={search_term_string}`,
+        urlTemplate: `${SITE_URL}/search?q={search_term_string}`,
       },
       'query-input': 'required name=search_term_string',
     },
@@ -37,10 +38,10 @@ export function generateOrganizationSchema() {
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    '@id': `${SITE_CONFIG.url}/#organization`,
+    '@id': `${SITE_URL}/#organization`,
     name: SITE_CONFIG.publisher.name,
     legalName: SITE_CONFIG.publisher.legalName,
-    url: SITE_CONFIG.url,
+    url: SITE_URL,
     logo: {
       '@type': 'ImageObject',
       url: getAbsoluteImageUrl(SITE_CONFIG.publisher.logo),
@@ -57,7 +58,7 @@ export function generateBreadcrumbSchema(items: BreadcrumbItem[]) {
       '@type': 'ListItem',
       position: 1,
       name: 'Home',
-      item: SITE_CONFIG.url,
+      item: SITE_URL,
     },
     ...items.map((item, index) => {
       const position = index + 2;
@@ -97,7 +98,7 @@ export function generateArticleSchema(article: Article) {
     '@type': 'NewsArticle',
     '@id': `${articleUrl}/#article`,
     isPartOf: {
-      '@id': `${SITE_CONFIG.url}/#website`,
+      '@id': `${SITE_URL}/#website`,
     },
     headline: article.title,
     description: article.metaDescription || article.excerpt,
@@ -119,9 +120,9 @@ export function generateArticleSchema(article: Article) {
     ],
     publisher: {
       '@type': 'Organization',
-      '@id': `${SITE_CONFIG.url}/#organization`,
+      '@id': `${SITE_URL}/#organization`,
       name: SITE_CONFIG.publisher.name,
-      url: SITE_CONFIG.url,
+      url: SITE_URL,
       logo: {
         '@type': 'ImageObject',
         url: getAbsoluteImageUrl(SITE_CONFIG.publisher.logo),

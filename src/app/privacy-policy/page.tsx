@@ -1,9 +1,20 @@
 import { Metadata } from 'next';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
+import { SITE_URL } from '@/lib/site';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: 'Privacy Policy — Soft Gamer',
   description: 'Soft Gamer privacy policy covering cookies, Google AdSense advertising, data collection, GDPR, CCPA, and your opt-out rights.',
+  alternates: {
+    canonical: '/privacy-policy',
+  },
+  openGraph: {
+    title: 'Privacy Policy — Soft Gamer',
+    description: 'Soft Gamer privacy policy covering cookies, Google AdSense advertising, data collection, GDPR, CCPA, and your opt-out rights.',
+    url: `${SITE_URL}/privacy-policy`,
+    type: 'website',
+  },
 };
 
 export default function PrivacyPolicyPage() {

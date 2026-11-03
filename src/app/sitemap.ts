@@ -1,12 +1,12 @@
 import { MetadataRoute } from 'next';
 import { getAllArticles, getAllAuthors } from '@/lib/articles';
-import { SITE_CONFIG } from '@/lib/constants';
+import { SITE_URL } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = SITE_CONFIG.url;
+  const baseUrl = SITE_URL;
   const allArticles = await getAllArticles();
 
   // Strictly filter to only published, non-scheduled articles for public indexation
