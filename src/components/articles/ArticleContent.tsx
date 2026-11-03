@@ -44,13 +44,29 @@ function addHeadingIds(html: string, tocItems: TocItem[]): string {
   return result;
 }
 
+function decodeHtmlEntities(str: string): string {
+  if (!str.includes('&lt;') && !str.includes('&gt;') && !str.includes('&amp;')) {
+    return str;
+  }
+  return str
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&');
+}
+
 export function ArticleContent({ content }: ArticleContentProps) {
-  const isHTML = /<[a-z][\s\S]*>/i.test(content);
+  if (!content) return null;
+
+  // Unescape any double-encoded HTML entities so tags like &lt;p&gt; turn into <p>
+  const decoded = decodeHtmlEntities(content);
+  const isHTML = /<[a-z][\s\S]*>/i.test(decoded);
 
   if (isHTML) {
-    const tocItems = extractTocItems(content);
+    const tocItems = extractTocItems(decoded);
     const showToc = tocItems.length >= 3;
-    const contentWithIds = showToc ? addHeadingIds(content, tocItems) : content;
+    const contentWithIds = showToc ? addHeadingIds(decoded, tocItems) : decoded;
 
     return (
       <div>

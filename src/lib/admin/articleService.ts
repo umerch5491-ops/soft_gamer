@@ -172,8 +172,8 @@ export async function saveArticle(
       }
 
       // Resolve author profile from public.authors table
-      const cleanAuthorName = formData.authorName.toLowerCase().includes('umerch5491')
-        ? 'Umer Jamil'
+      const cleanAuthorName = (!formData.authorName || formData.authorName.toLowerCase().includes('umerch5491'))
+        ? 'Soft Gamer Staff'
         : formData.authorName.trim();
       let resolvedAuthorId: string | null = null;
       if (uuidRegex.test(cleanAuthorName)) {
@@ -183,7 +183,7 @@ export async function saveArticle(
         const { data: authRow } = await supabase
           .from('authors')
           .select('id')
-          .or(`name.ilike.%${cleanAuthorName}%,name.ilike.%umerch5491%`)
+          .or(`name.ilike.%${cleanAuthorName}%,slug.eq.soft-gamer-staff,slug.eq.soft-gamer-editor`)
           .limit(1)
           .maybeSingle();
 
@@ -195,7 +195,7 @@ export async function saveArticle(
           const { data: authBySlug } = await supabase
             .from('authors')
             .select('id')
-            .or(`slug.eq.${authorSlug},slug.eq.umer-jamil,slug.eq.umerch5491`)
+            .or(`slug.eq.${authorSlug},slug.eq.soft-gamer-staff,slug.eq.soft-gamer-editor`)
             .limit(1)
             .maybeSingle();
 

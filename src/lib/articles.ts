@@ -17,11 +17,11 @@ function formatAuthor(dbAuthor?: DbAuthor | null): Author {
   const rawName = dbAuthor?.name?.trim() || '';
   if (!rawName || rawName.toLowerCase() === 'umerch5491' || rawName.toLowerCase().includes('umerch5491')) {
     return {
-      name: 'Umer Jamil',
-      role: 'Editor-in-Chief',
-      bio: 'Lifelong gamer and tech enthusiast covering hardware benchmarks, gaming news, and competitive guides for Soft Gamer.',
+      name: 'Soft Gamer Staff',
+      role: 'Editorial Team',
+      bio: 'The Soft Gamer editorial desk covers breaking news, game updates, tactical guides, and hardware performance.',
       avatar: dbAuthor?.avatar,
-      slug: 'umer-jamil',
+      slug: 'soft-gamer-staff',
     };
   }
   const slug = dbAuthor?.slug || rawName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -30,18 +30,18 @@ function formatAuthor(dbAuthor?: DbAuthor | null): Author {
     role: dbAuthor?.bio || 'Staff Writer',
     bio: dbAuthor?.bio || 'Gaming journalist and editorial contributor at Soft Gamer.',
     avatar: dbAuthor?.avatar,
-    slug: slug || 'editorial-staff',
+    slug: slug || 'soft-gamer-staff',
   };
 }
 
 function normalizeArticle(art: Article): Article {
-  const authorName = art.author?.name?.trim() || 'Soft Gamer Editorial Staff';
+  const authorName = art.author?.name?.trim() || 'Soft Gamer Staff';
   const isUmer = authorName.toLowerCase().includes('umerch5491') || authorName.toLowerCase() === 'umerch5491';
-  const cleanName = isUmer ? 'Umer Jamil' : authorName;
-  const slug = art.author?.slug || (isUmer ? 'umer-jamil' : cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'editorial-staff');
-  const role = isUmer ? 'Editor-in-Chief' : (art.author?.role || 'Staff Writer');
+  const cleanName = isUmer ? 'Soft Gamer Staff' : authorName;
+  const slug = art.author?.slug || (isUmer ? 'soft-gamer-staff' : cleanName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'soft-gamer-staff');
+  const role = isUmer ? 'Editorial Team' : (art.author?.role || 'Staff Writer');
   const bio = art.author?.bio || (isUmer
-    ? 'Lifelong gamer and tech enthusiast covering hardware benchmarks, gaming news, and competitive guides for Soft Gamer.'
+    ? 'The Soft Gamer editorial desk covers breaking news, game updates, tactical guides, and hardware performance.'
     : 'Gaming journalist and editorial contributor at Soft Gamer.');
 
   return {
@@ -348,12 +348,12 @@ export async function getAuthorBySlug(slug: string): Promise<Author | null> {
   const all = await getAllArticles();
   const match = all.find((art) => art.author.slug === slug);
   if (match) return match.author;
-  if (slug === 'umer-jamil') {
+  if (slug === 'soft-gamer-staff' || slug === 'soft-gamer-editor' || slug === 'editorial-staff') {
     return {
-      name: 'Umer Jamil',
-      role: 'Editor-in-Chief',
-      bio: 'Lifelong gamer and tech enthusiast covering hardware benchmarks, gaming news, and competitive guides for Soft Gamer.',
-      slug: 'umer-jamil',
+      name: 'Soft Gamer Staff',
+      role: 'Editorial Team',
+      bio: 'The Soft Gamer editorial desk covers breaking news, game updates, tactical guides, and hardware performance.',
+      slug: 'soft-gamer-staff',
     };
   }
   return null;
@@ -372,12 +372,12 @@ export async function getAllAuthors(): Promise<Author[]> {
       authorsMap.set(art.author.slug, art.author);
     }
   }
-  if (!authorsMap.has('umer-jamil')) {
-    authorsMap.set('umer-jamil', {
-      name: 'Umer Jamil',
-      role: 'Editor-in-Chief',
-      bio: 'Lifelong gamer and tech enthusiast covering hardware benchmarks, gaming news, and competitive guides for Soft Gamer.',
-      slug: 'umer-jamil',
+  if (!authorsMap.has('soft-gamer-staff')) {
+    authorsMap.set('soft-gamer-staff', {
+      name: 'Soft Gamer Staff',
+      role: 'Editorial Team',
+      bio: 'The Soft Gamer editorial desk covers breaking news, game updates, tactical guides, and hardware performance.',
+      slug: 'soft-gamer-staff',
     });
   }
   return Array.from(authorsMap.values());

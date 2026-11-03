@@ -140,7 +140,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   ]);
 
   const imageAlt = getDescriptiveImageAlt(article);
-  const authorSlug = article.author.slug || 'umer-jamil';
+  const authorSlug = article.author.slug || 'soft-gamer-staff';
 
   return (
     <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

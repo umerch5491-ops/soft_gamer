@@ -72,9 +72,8 @@ export function ArticleForm({ initialArticle, isEditMode = false }: ArticleFormP
     initialArticle?.category ?? 'gaming-news'
   );
 
-  // Author: use authenticated user name; allow override in Advanced Settings
-  const rawAuthor = user?.name ?? initialArticle?.author.name ?? 'Umer Jamil';
-  const defaultAuthorName = rawAuthor.toLowerCase().includes('umerch5491') ? 'Umer Jamil' : rawAuthor;
+  // Author: Default to anonymous publication byline ("Soft Gamer Staff")
+  const defaultAuthorName = 'Soft Gamer Staff';
   const [authorName, setAuthorName] = useState(
     initialArticle?.author.name && !initialArticle.author.name.toLowerCase().includes('umerch5491')
       ? initialArticle.author.name
@@ -83,7 +82,7 @@ export function ArticleForm({ initialArticle, isEditMode = false }: ArticleFormP
   const [authorRole, setAuthorRole] = useState(
     initialArticle?.author.role && !initialArticle.author.role.toLowerCase().includes('umerch5491')
       ? initialArticle.author.role
-      : 'Editor-in-Chief'
+      : 'Editorial Desk'
   );
 
   // Advanced fields

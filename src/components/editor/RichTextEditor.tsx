@@ -292,7 +292,7 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
             <span className="text-xs uppercase font-bold tracking-wider text-[#8B5CF6] block mb-4">
               [Preview Rendering in Soft Gamer Typography]
             </span>
-            <ArticleContent content={editor.getText()} />
+            <ArticleContent content={editor.getHTML()} />
           </div>
         </div>
       )}

@@ -74,8 +74,8 @@ export function Footer() {
         {/* Dynamic Copyright Subfooter */}
         <div className="mt-12 pt-8 border-t border-[#272B3A] flex flex-col sm:flex-row items-center justify-between text-xs text-[#A1A1AA] gap-4">
           <p>© {currentYear} Soft Gamer. All rights reserved.</p>
-          <p className="text-center sm:text-right">
-            Independent gaming journalism &amp; editorial guides.
+          <p className="text-center sm:text-right max-w-xl text-[11px] text-[#A1A1AA]/80">
+            Soft Gamer is an independent gaming publication not affiliated with, endorsed by, or sponsored by any game publisher or developer. All trademarks and registered trademarks are the property of their respective owners.
           </p>
         </div>
       </div>

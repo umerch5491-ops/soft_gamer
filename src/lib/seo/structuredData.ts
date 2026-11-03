@@ -91,7 +91,7 @@ export function generateBreadcrumbSchema(items: BreadcrumbItem[]) {
 export function generateArticleSchema(article: Article) {
   const articleUrl = getCanonicalUrl(`/articles/${article.slug}`);
   const featuredImageUrl = getAbsoluteImageUrl(article.featuredImage);
-  const authorUrl = getCanonicalUrl(`/author/${article.author.slug || 'umer-jamil'}`);
+  const authorUrl = getCanonicalUrl(`/author/${article.author.slug || 'soft-gamer-staff'}`);
 
   return {
     '@context': 'https://schema.org',
