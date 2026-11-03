@@ -1,22 +1,13 @@
 import { Metadata } from 'next';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { AlertTriangle, ShieldAlert } from 'lucide-react';
-import { SITE_URL } from '@/lib/site';
+import { buildPageMetadata } from '@/lib/site';
 
-export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
+export const metadata: Metadata = buildPageMetadata({
   title: 'Editorial & Hardware Disclaimer — Soft Gamer',
   description: 'Soft Gamer disclaimer: hardware testing precautions, trademark acknowledgments, review policy, and editorial disclosures.',
-  alternates: {
-    canonical: '/disclaimer',
-  },
-  openGraph: {
-    title: 'Editorial & Hardware Disclaimer — Soft Gamer',
-    description: 'Soft Gamer disclaimer: hardware testing precautions, trademark acknowledgments, review policy, and editorial disclosures.',
-    url: `${SITE_URL}/disclaimer`,
-    type: 'website',
-  },
-};
+  path: '/disclaimer',
+});
 
 export default function DisclaimerPage() {
   const contactEmail = process.env.CONTACT_EMAIL || 'umerjamil126@gmail.com';

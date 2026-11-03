@@ -1,21 +1,12 @@
 import { Metadata } from 'next';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
-import { SITE_URL } from '@/lib/site';
+import { buildPageMetadata } from '@/lib/site';
 
-export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
+export const metadata: Metadata = buildPageMetadata({
   title: 'Terms & Conditions — Soft Gamer',
   description: 'Terms and conditions governing the use of Soft Gamer editorial content, technical walkthroughs, and reader services.',
-  alternates: {
-    canonical: '/terms-and-conditions',
-  },
-  openGraph: {
-    title: 'Terms & Conditions — Soft Gamer',
-    description: 'Terms and conditions governing the use of Soft Gamer editorial content, technical walkthroughs, and reader services.',
-    url: `${SITE_URL}/terms-and-conditions`,
-    type: 'website',
-  },
-};
+  path: '/terms-and-conditions',
+});
 
 export default function TermsAndConditionsPage() {
   const contactEmail = process.env.CONTACT_EMAIL || 'umerjamil126@gmail.com';

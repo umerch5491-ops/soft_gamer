@@ -55,29 +55,9 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    type: 'website',
-    locale: 'en_US',
-    url: SITE_URL,
     siteName: 'Soft Gamer',
-    title: SITE_CONFIG.title,
-    description: SITE_CONFIG.description,
-    images: [
-      {
-        url: `${SITE_URL}/images/og-default.png`,
-        width: 1200,
-        height: 630,
-        alt: 'Soft Gamer — Premium Gaming News and Editorial Magazine',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: SITE_CONFIG.title,
-    description: SITE_CONFIG.description,
-    images: [`${SITE_URL}/images/og-default.png`],
-  },
-  alternates: {
-    canonical: '/',
+    locale: 'en_US',
+    type: 'website',
   },
 };
 

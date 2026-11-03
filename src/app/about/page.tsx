@@ -2,22 +2,13 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { Cpu, Gamepad2, Compass, ShieldCheck, Mail, ArrowRight } from 'lucide-react';
-import { SITE_URL } from '@/lib/site';
+import { buildPageMetadata } from '@/lib/site';
 
-export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
+export const metadata: Metadata = buildPageMetadata({
   title: 'About Us — Soft Gamer Editorial & Mission',
   description: 'Learn about Soft Gamer, our editorial mission, testing standards, and commitment to independent, technical gaming journalism.',
-  alternates: {
-    canonical: '/about',
-  },
-  openGraph: {
-    title: 'About Us — Soft Gamer Editorial & Mission',
-    description: 'Learn about Soft Gamer, our editorial mission, testing standards, and commitment to independent, technical gaming journalism.',
-    url: `${SITE_URL}/about`,
-    type: 'website',
-  },
-};
+  path: '/about',
+});
 
 export default function AboutPage() {
   const contactEmail = process.env.CONTACT_EMAIL || 'umerjamil126@gmail.com';
