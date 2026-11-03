@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next';
-import { getAllArticles, getAllAuthors } from '@/lib/articles';
+import { getAllArticles, getAllAuthors, getArticlesByCategory } from '@/lib/articles';
 import { SITE_URL } from '@/lib/site';
+import { CategorySlug } from '@/types/article';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -25,49 +26,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Stable revision date for legal and company static pages (updated Nov 2026)
   const legalPagesDate = new Date('2026-11-03T00:00:00.000Z');
 
-  // Core static & category routes (Strictly excludes /admin, /search, and /api)
+  // Core static pages (Always indexed and essential for AdSense trust)
   const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
       lastModified: latestArticleDate,
       changeFrequency: 'daily',
       priority: 1.0,
-    },
-    {
-      url: `${baseUrl}/gaming-news`,
-      lastModified: latestArticleDate,
-      changeFrequency: 'daily',
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/pc-gaming`,
-      lastModified: latestArticleDate,
-      changeFrequency: 'daily',
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/mobile-gaming`,
-      lastModified: latestArticleDate,
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/console-gaming`,
-      lastModified: latestArticleDate,
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/game-guides`,
-      lastModified: latestArticleDate,
-      changeFrequency: 'weekly',
-      priority: 0.85,
-    },
-    {
-      url: `${baseUrl}/reviews`,
-      lastModified: latestArticleDate,
-      changeFrequency: 'weekly',
-      priority: 0.85,
     },
     {
       url: `${baseUrl}/about`,
@@ -101,6 +66,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
+  // Only include category hubs in sitemap if they have at least 1 published article
+  // (Prevents GSC 'Submitted URL marked noindex' errors for empty categories)
+  const categorySlugs: CategorySlug[] = [
+    'gaming-news',
+    'pc-gaming',
+    'mobile-gaming',
+    'console-gaming',
+    'game-guides',
+    'reviews',
+  ];
+
+  const categoryRoutes: MetadataRoute.Sitemap = [];
+  for (const slug of categorySlugs) {
+    const catArticles = await getArticlesByCategory(slug, 1);
+    if (catArticles.length > 0) {
+      categoryRoutes.push({
+        url: `${baseUrl}/${slug}`,
+        lastModified: latestArticleDate,
+        changeFrequency: 'daily',
+        priority: 0.85,
+      });
+    }
+  }
+
   // Article individual dynamic routes
   const articleRoutes: MetadataRoute.Sitemap = publishedArticles.map((article) => ({
     url: `${baseUrl}/articles/${article.slug}`,
@@ -118,5 +107,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticRoutes, ...articleRoutes, ...authorRoutes];
+  return [...staticRoutes, ...categoryRoutes, ...articleRoutes, ...authorRoutes];
 }

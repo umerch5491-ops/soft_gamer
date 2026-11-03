@@ -61,13 +61,18 @@ export default async function HomePage() {
     getArticlesByCategory('reviews', 3),
   ]);
 
+  // Exclude featured hero article from the secondary grid to prevent duplicate appearance
+  const secondaryNews = featured 
+    ? latestNews.filter((a) => a.id !== featured.id) 
+    : latestNews;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-16">
       {/* Section A: Featured Story Hero */}
       {featured && <FeaturedArticle article={featured} />}
 
       {/* Section B & C: Latest Gaming News (Grid) + Trending Articles (Sidebar) */}
-      {latestNews.length > 0 && (
+      {secondaryNews.length > 0 && (
         <section>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Main Article Grid */}
@@ -79,7 +84,7 @@ export default async function HomePage() {
                 viewAllHref="/gaming-news"
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {latestNews.map((article, idx) => (
+                {secondaryNews.map((article, idx) => (
                   <ArticleCard
                     key={article.id}
                     article={article}

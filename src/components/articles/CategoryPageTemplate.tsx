@@ -1,10 +1,12 @@
 import { CategorySlug } from '@/types/article';
 import { CATEGORIES } from '@/data/categories';
-import { getArticlesByCategory } from '@/lib/articles';
+import { getArticlesByCategory, getLatestArticles } from '@/lib/articles';
 import { ArticleCard } from '@/components/articles/ArticleCard';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { generateBreadcrumbSchema } from '@/lib/seo/structuredData';
 import { AdSlot } from '@/components/ads/AdSlot';
+import Link from 'next/link';
+import { Compass, BookOpen } from 'lucide-react';
 
 interface CategoryPageTemplateProps {
   slug: CategorySlug;
@@ -13,6 +15,7 @@ interface CategoryPageTemplateProps {
 export async function CategoryPageTemplate({ slug }: CategoryPageTemplateProps) {
   const categoryInfo = CATEGORIES[slug];
   const articles = await getArticlesByCategory(slug);
+  const fallbackArticles = articles.length === 0 ? await getLatestArticles(3) : [];
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { label: categoryInfo.name, href: `/${slug}` },
@@ -72,16 +75,50 @@ export async function CategoryPageTemplate({ slug }: CategoryPageTemplateProps) 
           )}
         </div>
       ) : (
-        <div className="p-12 text-center bg-[#111522] border border-[#272B3A] rounded-2xl">
-          <p className="text-2xl font-bold text-[#F8FAFC] mb-3">Coming Soon</p>
-          <p className="text-[#A1A1AA] mb-6">
-            We&apos;re working on bringing you great {categoryInfo.name} content. Check back soon!
-          </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <a href="/gaming-news" className="px-4 py-2 rounded-lg bg-[#171C2B] border border-[#272B3A] text-[#38BDF8] text-sm font-medium hover:border-[#38BDF8] transition-colors">Gaming News</a>
-            <a href="/game-guides" className="px-4 py-2 rounded-lg bg-[#171C2B] border border-[#272B3A] text-[#38BDF8] text-sm font-medium hover:border-[#38BDF8] transition-colors">Game Guides</a>
-            <a href="/reviews" className="px-4 py-2 rounded-lg bg-[#171C2B] border border-[#272B3A] text-[#38BDF8] text-sm font-medium hover:border-[#38BDF8] transition-colors">Reviews</a>
+        <div className="space-y-12">
+          {/* Informational Status Card */}
+          <div className="p-8 sm:p-10 text-center bg-[#111522] border border-[#272B3A] rounded-2xl">
+            <div className="w-12 h-12 rounded-xl bg-[#171C2B] border border-[#272B3A] text-[#38BDF8] flex items-center justify-center mx-auto mb-4">
+              <Compass className="w-6 h-6" />
+            </div>
+            <h2 className="text-xl sm:text-2xl font-bold text-[#F8FAFC] mb-2">
+              {categoryInfo.name} Coverage in Preparation
+            </h2>
+            <p className="text-sm text-[#A1A1AA] max-w-lg mx-auto mb-6 leading-relaxed">
+              Our editorial contributors are currently researching and drafting dedicated reporting for this section. Read our latest published stories below or explore other active verticals.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Link
+                href="/"
+                className="px-4 py-2 rounded-lg bg-[#171C2B] border border-[#272B3A] text-xs font-semibold text-[#F8FAFC] hover:border-[#8B5CF6] transition-colors"
+              >
+                Back to Front Page
+              </Link>
+              <Link
+                href="/about"
+                className="px-4 py-2 rounded-lg bg-[#171C2B] border border-[#272B3A] text-xs font-semibold text-[#38BDF8] hover:border-[#38BDF8] transition-colors"
+              >
+                Our Editorial Standards
+              </Link>
+            </div>
           </div>
+
+          {/* Fallback Feed: Active Stories So the User / Reviewer Never Lands on a Dead Page */}
+          {fallbackArticles.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-6">
+                <BookOpen className="w-5 h-5 text-[#8B5CF6]" />
+                <h3 className="text-xl font-bold text-[#F8FAFC]">
+                  Latest Gaming Stories Across Soft Gamer
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {fallbackArticles.map((art) => (
+                  <ArticleCard key={art.id} article={art} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
