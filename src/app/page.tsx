@@ -11,11 +11,38 @@ import { TrendingArticles } from '@/components/home/TrendingArticles';
 import { CategoryCards } from '@/components/home/CategoryCards';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 
-export const revalidate = 60;
+// Force dynamic rendering on every request to prevent stale build-time ISR caches
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.softgamer.online'),
   title: 'Soft Gamer — Gaming News, Guides, Reviews & Hardware Insights',
   description: 'Independent gaming news, game guides, PC hardware analysis, console coverage, and honest reviews.',
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    title: 'Soft Gamer — Gaming News, Guides, Reviews & Hardware Insights',
+    description: 'Independent gaming news, game guides, PC hardware analysis, console coverage, and honest reviews.',
+    url: 'https://www.softgamer.online',
+    type: 'website',
+    siteName: 'Soft Gamer',
+    images: [
+      {
+        url: '/images/og-default.svg',
+        width: 1200,
+        height: 630,
+        alt: 'Soft Gamer — Gaming News, Guides, Reviews & Hardware Insights',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Soft Gamer — Gaming News, Guides, Reviews & Hardware Insights',
+    description: 'Independent gaming news, game guides, PC hardware analysis, console coverage, and honest reviews.',
+    images: ['/images/og-default.svg'],
+  },
 };
 
 export default async function HomePage() {

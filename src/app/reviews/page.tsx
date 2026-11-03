@@ -4,7 +4,8 @@ import { CATEGORIES } from '@/data/categories';
 import { getCanonicalUrl } from '@/lib/constants';
 import { getArticlesByCategory } from '@/lib/articles';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 const category = CATEGORIES['reviews'];
 const canonical = getCanonicalUrl('/reviews');
@@ -12,7 +13,8 @@ const canonical = getCanonicalUrl('/reviews');
 export async function generateMetadata(): Promise<Metadata> {
   const articles = await getArticlesByCategory('reviews');
   return {
-    title: 'Editorial Reviews — Gameplay & Technical Critiques',
+    metadataBase: new URL('https://www.softgamer.online'),
+    title: 'Reviews — Unbiased Gaming & Hardware Critiques',
     description: category.description,
     alternates: {
       canonical,
@@ -22,14 +24,14 @@ export async function generateMetadata(): Promise<Metadata> {
       follow: true,
     },
     openGraph: {
-      title: 'Editorial Reviews — Gameplay & Technical Critiques',
+      title: 'Reviews — Unbiased Gaming & Hardware Critiques',
       description: category.description,
       url: canonical,
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
-      title: 'Editorial Reviews — Gameplay & Technical Critiques',
+      title: 'Reviews — Unbiased Gaming & Hardware Critiques',
       description: category.description,
     },
   };

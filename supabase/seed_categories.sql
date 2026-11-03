@@ -11,6 +11,6 @@ ON CONFLICT (slug) DO NOTHING;
 
 -- Seed author profiles for the authenticated user and fallback
 INSERT INTO public.authors (name, slug, bio) VALUES
-  ('umerch5491', 'umerch5491', 'Admin & Lead Editor'),
+  ('Umer Jamil', 'umer-jamil', 'Editor-in-Chief & Founder'),
   ('Soft Gamer Editor', 'soft-gamer-editor', 'Editorial Staff')
 ON CONFLICT (slug) DO NOTHING;

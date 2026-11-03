@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Calendar, Clock, Tag, User, ChevronLeft, ChevronRight, MessageSquare, ExternalLink } from 'lucide-react';
-import { getAllArticles, getArticleBySlug, getRelatedArticles, getAdjacentArticles } from '@/lib/articles';
+import { getArticleBySlug, getRelatedArticles, getAdjacentArticles } from '@/lib/articles';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { ArticleContent } from '@/components/articles/ArticleContent';
 import { RelatedArticles } from '@/components/articles/RelatedArticles';
@@ -17,15 +17,9 @@ interface ArticlePageProps {
   }>;
 }
 
-export const revalidate = 60;
-export const dynamicParams = true;
-
-export async function generateStaticParams() {
-  const articles = await getAllArticles();
-  return articles.map((article) => ({
-    slug: article.slug,
-  }));
-}
+// Force dynamic SSR rendering on every request to ensure fresh data from Supabase
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 function getCleanDescription(article: { metaDescription?: string; excerpt?: string; content?: string }): string {
   if (article.metaDescription && article.metaDescription.trim().length >= 50) {
@@ -60,6 +54,7 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
 
   if (!article) {
     return {
+      metadataBase: new URL('https://www.softgamer.online'),
       title: 'Article Not Found | Soft Gamer',
       description: 'The requested editorial piece could not be located.',
       robots: {
@@ -80,6 +75,7 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
     new Date(article.publishedAt).getTime() <= Date.now();
 
   return {
+    metadataBase: new URL('https://www.softgamer.online'),
     title: pageTitle,
     description: pageDescription,
     authors: [{ name: article.author.name }],

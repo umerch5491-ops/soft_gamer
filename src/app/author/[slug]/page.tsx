@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { User, BookOpen } from 'lucide-react';
-import { getAuthorBySlug, getArticlesByAuthor, getAllAuthors } from '@/lib/articles';
+import { getAuthorBySlug, getArticlesByAuthor } from '@/lib/articles';
 import { ArticleCard } from '@/components/articles/ArticleCard';
 import { Breadcrumbs } from '@/components/ui/Breadcrumbs';
 import { getCanonicalUrl } from '@/lib/constants';
@@ -12,15 +12,8 @@ interface AuthorPageProps {
   }>;
 }
 
-export const revalidate = 60;
-export const dynamicParams = true;
-
-export async function generateStaticParams() {
-  const authors = await getAllAuthors();
-  return authors.map((author) => ({
-    slug: author.slug || 'umer-jamil',
-  }));
-}
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function generateMetadata({ params }: AuthorPageProps): Promise<Metadata> {
   const { slug } = await params;
@@ -28,6 +21,7 @@ export async function generateMetadata({ params }: AuthorPageProps): Promise<Met
 
   if (!author) {
     return {
+      metadataBase: new URL('https://www.softgamer.online'),
       title: 'Author Not Found | Soft Gamer',
       robots: { index: false, follow: false },
     };
@@ -36,6 +30,7 @@ export async function generateMetadata({ params }: AuthorPageProps): Promise<Met
   const canonical = getCanonicalUrl(`/author/${author.slug || slug}`);
 
   return {
+    metadataBase: new URL('https://www.softgamer.online'),
     title: `${author.name} — Author Profile | Soft Gamer`,
     description: author.bio || `Read articles, reviews, and guides by ${author.name} on Soft Gamer.`,
     alternates: {
@@ -120,4 +115,3 @@ export default async function AuthorPage({ params }: AuthorPageProps) {
     </div>
   );
 }
-

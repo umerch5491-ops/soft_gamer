@@ -4,7 +4,8 @@ import { CATEGORIES } from '@/data/categories';
 import { getCanonicalUrl } from '@/lib/constants';
 import { getArticlesByCategory } from '@/lib/articles';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 const category = CATEGORIES['pc-gaming'];
 const canonical = getCanonicalUrl('/pc-gaming');
@@ -12,7 +13,8 @@ const canonical = getCanonicalUrl('/pc-gaming');
 export async function generateMetadata(): Promise<Metadata> {
   const articles = await getArticlesByCategory('pc-gaming');
   return {
-    title: 'PC Gaming — Hardware, Benchmarks & Optimizations',
+    metadataBase: new URL('https://www.softgamer.online'),
+    title: 'PC Gaming — Hardware Benchmarks & Performance Guides',
     description: category.description,
     alternates: {
       canonical,
@@ -22,19 +24,19 @@ export async function generateMetadata(): Promise<Metadata> {
       follow: true,
     },
     openGraph: {
-      title: 'PC Gaming — Hardware, Benchmarks & Optimizations',
+      title: 'PC Gaming — Hardware Benchmarks & Performance Guides',
       description: category.description,
       url: canonical,
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
-      title: 'PC Gaming — Hardware, Benchmarks & Optimizations',
+      title: 'PC Gaming — Hardware Benchmarks & Performance Guides',
       description: category.description,
     },
   };
 }
 
-export default function PCGamingPage() {
+export default function PcGamingPage() {
   return <CategoryPageTemplate slug="pc-gaming" />;
 }

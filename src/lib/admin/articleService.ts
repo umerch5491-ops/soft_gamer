@@ -172,26 +172,31 @@ export async function saveArticle(
       }
 
       // Resolve author profile from public.authors table
+      const cleanAuthorName = formData.authorName.toLowerCase().includes('umerch5491')
+        ? 'Umer Jamil'
+        : formData.authorName.trim();
       let resolvedAuthorId: string | null = null;
-      if (uuidRegex.test(formData.authorName)) {
-        resolvedAuthorId = formData.authorName;
+      if (uuidRegex.test(cleanAuthorName)) {
+        resolvedAuthorId = cleanAuthorName;
       } else {
         // Try matching by exact or case-insensitive name
         const { data: authRow } = await supabase
           .from('authors')
           .select('id')
-          .ilike('name', formData.authorName.trim())
+          .or(`name.ilike.%${cleanAuthorName}%,name.ilike.%umerch5491%`)
+          .limit(1)
           .maybeSingle();
 
         if (authRow && 'id' in authRow) {
           resolvedAuthorId = (authRow as { id: string }).id;
         } else {
           // Check if an author matches the slugified username
-          const authorSlug = generateSlug(formData.authorName);
+          const authorSlug = generateSlug(cleanAuthorName);
           const { data: authBySlug } = await supabase
             .from('authors')
             .select('id')
-            .eq('slug', authorSlug)
+            .or(`slug.eq.${authorSlug},slug.eq.umer-jamil,slug.eq.umerch5491`)
+            .limit(1)
             .maybeSingle();
 
           if (authBySlug && 'id' in authBySlug) {

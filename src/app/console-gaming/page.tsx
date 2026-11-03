@@ -4,7 +4,8 @@ import { CATEGORIES } from '@/data/categories';
 import { getCanonicalUrl } from '@/lib/constants';
 import { getArticlesByCategory } from '@/lib/articles';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 const category = CATEGORIES['console-gaming'];
 const canonical = getCanonicalUrl('/console-gaming');
@@ -12,7 +13,8 @@ const canonical = getCanonicalUrl('/console-gaming');
 export async function generateMetadata(): Promise<Metadata> {
   const articles = await getArticlesByCategory('console-gaming');
   return {
-    title: 'Console Gaming — Architecture, Ecosystems & Titles',
+    metadataBase: new URL('https://www.softgamer.online'),
+    title: 'Console Gaming — PlayStation, Xbox & Switch Coverage',
     description: category.description,
     alternates: {
       canonical,
@@ -22,14 +24,14 @@ export async function generateMetadata(): Promise<Metadata> {
       follow: true,
     },
     openGraph: {
-      title: 'Console Gaming — Architecture, Ecosystems & Titles',
+      title: 'Console Gaming — PlayStation, Xbox & Switch Coverage',
       description: category.description,
       url: canonical,
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
-      title: 'Console Gaming — Architecture, Ecosystems & Titles',
+      title: 'Console Gaming — PlayStation, Xbox & Switch Coverage',
       description: category.description,
     },
   };

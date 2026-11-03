@@ -4,7 +4,8 @@ import { CATEGORIES } from '@/data/categories';
 import { getCanonicalUrl } from '@/lib/constants';
 import { getArticlesByCategory } from '@/lib/articles';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 const category = CATEGORIES['mobile-gaming'];
 const canonical = getCanonicalUrl('/mobile-gaming');
@@ -12,7 +13,8 @@ const canonical = getCanonicalUrl('/mobile-gaming');
 export async function generateMetadata(): Promise<Metadata> {
   const articles = await getArticlesByCategory('mobile-gaming');
   return {
-    title: 'Mobile Gaming — Handhelds, Silicon & Cross-Platform Play',
+    metadataBase: new URL('https://www.softgamer.online'),
+    title: 'Mobile Gaming — Updates, Guides & Handheld Coverage',
     description: category.description,
     alternates: {
       canonical,
@@ -22,14 +24,14 @@ export async function generateMetadata(): Promise<Metadata> {
       follow: true,
     },
     openGraph: {
-      title: 'Mobile Gaming — Handhelds, Silicon & Cross-Platform Play',
+      title: 'Mobile Gaming — Updates, Guides & Handheld Coverage',
       description: category.description,
       url: canonical,
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
-      title: 'Mobile Gaming — Handhelds, Silicon & Cross-Platform Play',
+      title: 'Mobile Gaming — Updates, Guides & Handheld Coverage',
       description: category.description,
     },
   };

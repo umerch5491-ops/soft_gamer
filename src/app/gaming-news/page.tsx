@@ -4,7 +4,8 @@ import { CATEGORIES } from '@/data/categories';
 import { getCanonicalUrl } from '@/lib/constants';
 import { getArticlesByCategory } from '@/lib/articles';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 const category = CATEGORIES['gaming-news'];
 const canonical = getCanonicalUrl('/gaming-news');
@@ -12,6 +13,7 @@ const canonical = getCanonicalUrl('/gaming-news');
 export async function generateMetadata(): Promise<Metadata> {
   const articles = await getArticlesByCategory('gaming-news');
   return {
+    metadataBase: new URL('https://www.softgamer.online'),
     title: 'Gaming News — Breaking Headlines & Industry Developments',
     description: category.description,
     alternates: {

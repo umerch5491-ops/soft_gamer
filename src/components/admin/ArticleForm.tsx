@@ -73,10 +73,17 @@ export function ArticleForm({ initialArticle, isEditMode = false }: ArticleFormP
   );
 
   // Author: use authenticated user name; allow override in Advanced Settings
-  const defaultAuthorName = user?.name ?? initialArticle?.author.name ?? 'Soft Gamer Editor';
-  const [authorName, setAuthorName] = useState(initialArticle?.author.name ?? defaultAuthorName);
+  const rawAuthor = user?.name ?? initialArticle?.author.name ?? 'Umer Jamil';
+  const defaultAuthorName = rawAuthor.toLowerCase().includes('umerch5491') ? 'Umer Jamil' : rawAuthor;
+  const [authorName, setAuthorName] = useState(
+    initialArticle?.author.name && !initialArticle.author.name.toLowerCase().includes('umerch5491')
+      ? initialArticle.author.name
+      : defaultAuthorName
+  );
   const [authorRole, setAuthorRole] = useState(
-    initialArticle?.author.role ?? 'Staff Writer'
+    initialArticle?.author.role && !initialArticle.author.role.toLowerCase().includes('umerch5491')
+      ? initialArticle.author.role
+      : 'Editor-in-Chief'
   );
 
   // Advanced fields
