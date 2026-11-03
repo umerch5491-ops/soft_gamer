@@ -54,7 +54,7 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
   return {
     title: pageTitle,
     description: pageDescription,
-    authors: [{ name: article.author.name }],
+    authors: [{ name: 'Soft Gamer Editorial' }],
     robots: {
       index: isIndexable,
       follow: isIndexable,
@@ -73,7 +73,7 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
       description: pageDescription,
       publishedTime: article.publishedAt,
       modifiedTime: article.updatedAt || article.publishedAt,
-      authors: [article.author.name],
+      authors: ['Soft Gamer Editorial'],
       tags: article.tags,
       images: [
         {
@@ -167,6 +167,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
             </span>
           )}
         </div>
+      </header>
 
       {/* Hero Featured Media */}
       <div className="relative aspect-video rounded-2xl overflow-hidden bg-[#111522] border border-[#272B3A] mb-8 shadow-xl">
@@ -214,4 +215,3 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     </article>
   );
 }
-
